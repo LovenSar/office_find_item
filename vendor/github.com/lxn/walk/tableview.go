@@ -2118,10 +2118,23 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 				}
 
 				utf16 := syscall.StringToUTF16(text)
-				buf := (*[264]uint16)(unsafe.Pointer(di.Item.PszText))
-				max := mini(len(utf16), int(di.Item.CchTextMax))
-				copy((*buf)[:], utf16[:max])
-				(*buf)[max-1] = 0
+				// Win7/旧版 common controls 下，CchTextMax 可能 > 264。
+				// walk 旧实现将缓冲区强转为 [264] 导致越界 panic。
+				// 这里按 CchTextMax 构造切片并做合理上限保护。
+				bufLen := int(di.Item.CchTextMax)
+				if bufLen > 0 && di.Item.PszText != nil {
+					if bufLen > 8192 {
+						bufLen = 8192
+					}
+					// 注意：walk 模块本身的 go 版本较老（go1.16），不能使用 unsafe.Slice。
+					// 这里用经典的“指针转大数组再切片”方式构造缓冲区视图。
+					buf := (*[8192]uint16)(unsafe.Pointer(di.Item.PszText))[:bufLen:bufLen]
+					max := mini(len(utf16), bufLen)
+					if max > 0 {
+						copy(buf[:max], utf16[:max])
+						buf[max-1] = 0
+					}
+				}
 			}
 
 			if (tv.imageProvider != nil || tv.styler != nil) && di.Item.Mask&win.LVIF_IMAGE > 0 {

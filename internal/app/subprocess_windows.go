@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -83,13 +84,24 @@ func startWorkerProcess(ctx context.Context, exePath string, root string, query 
 		args = append(args, "-workers", strconv.Itoa(workers))
 	}
 	cmd := exec.CommandContext(ctx, exePath, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	debugConsole := os.Getenv("OFIND_DEBUG_CONSOLE") == "1"
+	hide := !debugConsole
+	flags := uint32(0)
+	if debugConsole {
+		// CREATE_NEW_CONSOLE (0x00000010)
+		flags = 0x00000010
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: hide, CreationFlags: flags}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
-	// stderr 不消费会阻塞：合并到 stdout 便于排查
-	cmd.Stderr = cmd.Stdout
+	// debug 时保留 stderr 到控制台/父进程；非 debug 合并到 stdout 避免阻塞且便于采集。
+	if debugConsole {
+		cmd.Stderr = os.Stderr
+	} else {
+		cmd.Stderr = cmd.Stdout
+	}
 	if err := cmd.Start(); err != nil {
 		return err
 	}
@@ -118,7 +130,14 @@ func startDaemonProcess(exePath string, root string, workers int, onOut func(dae
 		args = append(args, "-workers", strconv.Itoa(workers))
 	}
 	cmd := exec.Command(exePath, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	debugConsole := os.Getenv("OFIND_DEBUG_CONSOLE") == "1"
+	hide := !debugConsole
+	flags := uint32(0)
+	if debugConsole {
+		// CREATE_NEW_CONSOLE (0x00000010)
+		flags = 0x00000010
+	}
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: hide, CreationFlags: flags}
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -128,7 +147,12 @@ func startDaemonProcess(exePath string, root string, workers int, onOut func(dae
 		_ = stdin.Close()
 		return nil, err
 	}
-	cmd.Stderr = cmd.Stdout
+	// debug 时保留 stderr 到控制台/父进程；非 debug 合并到 stdout 避免阻塞且便于采集。
+	if debugConsole {
+		cmd.Stderr = os.Stderr
+	} else {
+		cmd.Stderr = cmd.Stdout
+	}
 	if err := cmd.Start(); err != nil {
 		_ = stdin.Close()
 		return nil, err

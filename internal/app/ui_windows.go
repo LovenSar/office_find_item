@@ -255,13 +255,13 @@ func RunUI() error {
 			declarative.TableView{
 				AssignTo:            &tableView,
 				Model:               model,
-				LastColumnStretched: true,
+				// LastColumnStretched: true, // 用户反馈会导致出现横向滚动条，移除自动拉伸
 				ColumnsSizable:      true,
 				// DoubleBuffering:     true, // 双缓冲在部分 Win7 环境下可能导致内容不显示，暂关闭
 				Columns: []declarative.TableViewColumn{
-					{Title: "#", Width: 44},
-					{Title: "Path", Width: 520},
-					{Title: "Context", Width: 360},
+					{Title: "#", Width: 35},
+					{Title: "Path", Width: 350},
+					{Title: "Context", Width: 400}, // 35+350+400=785，略小于最小窗口宽度 820，确保无横向滚动条
 				},
 				OnItemActivated: revealSelected,
 			},

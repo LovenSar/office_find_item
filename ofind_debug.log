@@ -1,0 +1,110 @@
+2026/01/23 22:55:55 Starting UI mode...
+2026/01/23 22:56:08 PANIC: runtime error: index out of range [345] with length 264
+Stack:
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	runtime/debug/stack.go:24 +0x83
+main.main.func1()
+	office_find_item/cmd/ofind/main.go:32 +0x46
+panic({0x12484e0, 0xa78c650})
+	runtime/panic.go:884 +0x1b7
+github.com/lxn/walk.(*TableView).lvWndProc(0xa456a80, 0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3d114)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2124 +0x1fd7
+github.com/lxn/walk.tableViewNormalLVWndProc(0xd14a0, 0x4e, 0x0, 0xd3d114)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
+github.com/lxn/walk.(*TableView).WndProc(0xa456a80, 0x6169a, 0x4e, 0x0, 0xd3d114)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2610 +0x11f
+github.com/lxn/walk.defaultWndProc(0x6169a, 0x4e, 0x0, 0xd3d114)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/window.go:2159 +0xb2
+syscall.SyscallN(0x69696300, {0xa469a6c, 0x6, 0x6})
+	runtime/syscall_windows.go:557 +0x11d
+syscall.Syscall6(0x69696300, 0x5, 0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3f150, 0x0)
+	runtime/syscall_windows.go:501 +0x62
+github.com/lxn/win.CallWindowProc(0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3f150)
+	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
+github.com/lxn/walk.(*TableView).lvWndProc(0xa456a80, 0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3f150)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
+github.com/lxn/walk.tableViewNormalLVWndProc(0xd14a0, 0x4e, 0x0, 0xd3f150)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
+syscall.SyscallN(0x69696300, {0xa469fd0, 0x6, 0x6})
+	runtime/syscall_windows.go:557 +0x11d
+syscall.Syscall6(0x69696300, 0x5, 0x70d98430, 0xd14a0, 0x201, 0x1, 0xa101a6, 0x0)
+	runtime/syscall_windows.go:501 +0x62
+github.com/lxn/win.CallWindowProc(0x70d98430, 0xd14a0, 0x201, 0x1, 0xa101a6)
+	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
+github.com/lxn/walk.(*TableView).lvWndProc(0xa456a80, 0x70d98430, 0xd14a0, 0x201, 0x1, 0xa101a6)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
+github.com/lxn/walk.tableViewNormalLVWndProc(0xd14a0, 0x201, 0x1, 0xa101a6)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
+syscall.SyscallN(0x774dae80, {0xa46a534, 0x3, 0x3})
+	runtime/syscall_windows.go:557 +0x11d
+syscall.Syscall(0x774dae80, 0x2, 0xc1478, 0x155b790, 0x0)
+	runtime/syscall_windows.go:495 +0x57
+github.com/lxn/win.IsDialogMessage(0xc1478, 0x155b790)
+	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2834 +0x76
+github.com/lxn/walk.(*FormBase).mainLoop(0xa4c2000)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/mainloop_default.go:35 +0xfb
+github.com/lxn/walk.(*FormBase).Run(0xa4c2000)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/form.go:375 +0x1d8
+office_find_item/internal/app.RunUI()
+	office_find_item/internal/app/ui_windows.go:439 +0x1b28
+main.main()
+	office_find_item/cmd/ofind/main.go:66 +0x435
+
+2026/01/23 23:00:05 Starting UI mode...
+2026/01/23 23:00:19 PANIC: runtime error: index out of range [415] with length 264
+Stack:
+goroutine 1 [running, locked to thread]:
+runtime/debug.Stack()
+	runtime/debug/stack.go:24 +0x83
+main.main.func1()
+	office_find_item/cmd/ofind/main.go:32 +0x46
+panic({0x12484e0, 0xa895660})
+	runtime/panic.go:884 +0x1b7
+github.com/lxn/walk.(*TableView).lvWndProc(0xa856a80, 0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18fd284)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2124 +0x1fd7
+github.com/lxn/walk.tableViewNormalLVWndProc(0x3a1290, 0x4e, 0x0, 0x18fd284)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
+github.com/lxn/walk.(*TableView).WndProc(0xa856a80, 0x416da, 0x4e, 0x0, 0x18fd284)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2610 +0x11f
+github.com/lxn/walk.defaultWndProc(0x416da, 0x4e, 0x0, 0x18fd284)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/window.go:2159 +0xb2
+syscall.SyscallN(0x774d7130, {0xa869a6c, 0x6, 0x6})
+	runtime/syscall_windows.go:557 +0x11d
+syscall.Syscall6(0x774d7130, 0x5, 0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18ff2a0, 0x0)
+	runtime/syscall_windows.go:501 +0x62
+github.com/lxn/win.CallWindowProc(0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18ff2a0)
+	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
+github.com/lxn/walk.(*TableView).lvWndProc(0xa856a80, 0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18ff2a0)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
+github.com/lxn/walk.tableViewNormalLVWndProc(0x3a1290, 0x4e, 0x0, 0x18ff2a0)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
+syscall.SyscallN(0x774d7130, {0xa869fd0, 0x6, 0x6})
+	runtime/syscall_windows.go:557 +0x11d
+syscall.Syscall6(0x774d7130, 0x5, 0x70d98430, 0x3a1290, 0x201, 0x1, 0xc402a6, 0x0)
+	runtime/syscall_windows.go:501 +0x62
+github.com/lxn/win.CallWindowProc(0x70d98430, 0x3a1290, 0x201, 0x1, 0xc402a6)
+	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
+github.com/lxn/walk.(*TableView).lvWndProc(0xa856a80, 0x70d98430, 0x3a1290, 0x201, 0x1, 0xc402a6)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
+github.com/lxn/walk.tableViewNormalLVWndProc(0x3a1290, 0x201, 0x1, 0xc402a6)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
+syscall.SyscallN(0x774dae80, {0xa86a534, 0x3, 0x3})
+	runtime/syscall_windows.go:557 +0x11d
+syscall.Syscall(0x774dae80, 0x2, 0x9140a, 0x1b42588, 0x0)
+	runtime/syscall_windows.go:495 +0x57
+github.com/lxn/win.IsDialogMessage(0x9140a, 0x1b42588)
+	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2834 +0x76
+github.com/lxn/walk.(*FormBase).mainLoop(0xa8c6000)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/mainloop_default.go:35 +0xfb
+github.com/lxn/walk.(*FormBase).Run(0xa8c6000)
+	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/form.go:375 +0x1d8
+office_find_item/internal/app.RunUI()
+	office_find_item/internal/app/ui_windows.go:439 +0x1b28
+main.main()
+	office_find_item/cmd/ofind/main.go:66 +0x435
+
+2026/01/23 23:01:16 Starting UI mode...
+2026/01/23 23:07:24.098932 main.go:71: Starting UI mode...
+2026/01/23 23:07:29.865717 main.go:71: Starting UI mode...
+2026/01/23 23:17:55.993148 main.go:86: Starting UI mode...

@@ -3,15 +3,60 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
+	"log"
 	"os"
+	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
+	"time"
 
 	"office_find_item/internal/app"
 	"office_find_item/internal/winutil"
 )
 
 func main() {
+	// 日志与崩溃回溯：写到 exe 同级目录，便于 Win7 回溯。
+	if runtime.GOOS == "windows" {
+		exe, _ := os.Executable()
+		exeDir := filepath.Dir(exe)
+		logPath := filepath.Join(exeDir, "ofind_debug.log")
+		base := strings.ToLower(filepath.Base(exe))
+		debugMode := strings.Contains(base, "debug") || os.Getenv("OFIND_DEBUG") == "1"
+
+		f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err == nil {
+			if debugMode {
+				log.SetOutput(io.MultiWriter(os.Stderr, f))
+			} else {
+				// release：只写文件，不往控制台输出
+				log.SetOutput(f)
+			}
+		}
+		log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+		if debugMode {
+			// debug：让子进程也显示控制台窗口，方便观察。
+			_ = os.Setenv("OFIND_DEBUG_CONSOLE", "1")
+		} else {
+			_ = os.Unsetenv("OFIND_DEBUG_CONSOLE")
+		}
+
+		defer func() {
+			if r := recover(); r != nil {
+				msg := fmt.Sprintf("PANIC: %v\nStack:\n%s", r, debug.Stack())
+				log.Println(msg)
+				if debugMode {
+					fmt.Fprintln(os.Stderr, msg)
+					fmt.Println("\n程序发生关键错误，请截图反馈。按回车键退出...")
+					var temp string
+					fmt.Scanln(&temp)
+					time.Sleep(10 * time.Second)
+				}
+			}
+		}()
+	}
+
 	flag.Usage = func() {
 		out := flag.CommandLine.Output()
 		fmt.Fprintln(out, "Office Find Item - Win7 32-bit 文件内容搜索工具")
@@ -31,10 +76,19 @@ func main() {
 
 	// Windows 下双击启动通常不带参数：默认进入 UI。
 	if runtime.GOOS == "windows" && len(os.Args) == 1 {
-		// 尝试释放控制台（如果是以 console 子系统编译），避免拖着黑框。
-		winutil.DetachConsole()
+		// release：分离控制台避免黑框；debug：保留控制台便于观察。
+		exe, _ := os.Executable()
+		base := strings.ToLower(filepath.Base(exe))
+		debugMode := strings.Contains(base, "debug") || os.Getenv("OFIND_DEBUG") == "1"
+		if !debugMode {
+			winutil.DetachConsole()
+		}
+		log.Println("Starting UI mode...")
 		if err := app.RunUI(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			log.Printf("UI Error: %v", err)
+			if debugMode {
+				fmt.Fprintln(os.Stderr, err)
+			}
 			os.Exit(1)
 		}
 		return
