@@ -18,11 +18,15 @@ func readAllLimit(r io.Reader, limit int64) ([]byte, error) {
 	for {
 		n, err := r.Read(tmp)
 		if n > 0 {
-			total += int64(n)
-			if total > limit {
-				return nil, errors.New("文件过大，超过读取上限")
+			toRead := int64(n)
+			if total+toRead > limit {
+				toRead = limit - total
 			}
-			buf = append(buf, tmp[:n]...)
+			buf = append(buf, tmp[:toRead]...)
+			total += toRead
+			if total >= limit {
+				return buf, nil
+			}
 		}
 		if err != nil {
 			if errors.Is(err, io.EOF) {

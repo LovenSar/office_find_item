@@ -45,9 +45,22 @@ func (m *ResultsModel) Reset() {
 }
 
 func (m *ResultsModel) Append(r ResultRow) {
-	at := len(m.rows)
 	m.rows = append(m.rows, r)
-	m.PublishRowsInserted(at, at)
+	// 单行插入也强制 Reset，确保 UI 刷新
+	m.PublishRowsReset()
+}
+
+func (m *ResultsModel) AppendMany(rs []ResultRow) {
+	if len(rs) == 0 {
+		return
+	}
+	// start := len(m.rows)
+	m.rows = append(m.rows, rs...)
+	// end := len(m.rows) - 1
+	// m.PublishRowsInserted(start, end)
+	
+	// 强制全量刷新，解决部分系统下表格空白的问题
+	m.PublishRowsReset()
 }
 
 func (m *ResultsModel) Row(row int) (ResultRow, bool) {

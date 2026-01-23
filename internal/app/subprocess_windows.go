@@ -10,6 +10,7 @@ import (
 	"io"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -144,6 +145,12 @@ func startDaemonProcess(exePath string, root string, workers int, onOut func(dae
 			var out daemonOut
 			if err := json.Unmarshal(line, &out); err == nil {
 				onOut(out)
+			} else {
+				// 尝试捕获非 JSON 输出（如 panic 或 log），转发给 UI 以便于排查问题
+				txt := strings.TrimSpace(string(line))
+				if txt != "" {
+					onOut(daemonOut{Type: "status", Message: "Daemon Log: " + txt})
+				}
 			}
 		}
 		_ = cmd.Wait()

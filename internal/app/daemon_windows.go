@@ -14,7 +14,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 
 	"office_find_item/internal/cache"
 	"office_find_item/internal/extract"
@@ -74,29 +73,10 @@ func RunDaemon(opts CLIOptions) error {
 	}
 	c := &cache.Cache{Root: filepath.Join(cacheRoot, "text"), MaxTextBytes: 2 * 1024 * 1024}
 
-	filesMu := sync.Mutex{}
-	files := make([]string, 0, 1024)
-	indexDone := make(chan struct{})
-
-	go func() {
-		defer close(indexDone)
-		_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return nil
-			}
-			if d.IsDir() {
-				return nil
-			}
-			ext := strings.ToLower(filepath.Ext(d.Name()))
-			if _, ok := daemonSupportedExt[ext]; !ok {
-				return nil
-			}
-			filesMu.Lock()
-			files = append(files, path)
-			filesMu.Unlock()
-			return nil
-		})
-	}()
+	// 移除全量内存缓存，改为流式遍历，避免全盘搜索时 OOM 或启动卡顿。
+	// filesMu := sync.Mutex{}
+	// files := make([]string, 0, 1024)
+	// indexDone := make(chan struct{})
 
 	in := bufio.NewReader(os.Stdin)
 	enc := json.NewEncoder(os.Stdout)
@@ -109,7 +89,7 @@ func RunDaemon(opts CLIOptions) error {
 
 	var (
 		searchMu sync.Mutex
-		cancel  context.CancelFunc
+		cancel   context.CancelFunc
 	)
 
 	startSearch := func(cmd daemonCmd) {
@@ -234,30 +214,30 @@ func RunDaemon(opts CLIOptions) error {
 			}()
 		}
 
+		// 启动流式遍历：边遍历边搜索，解决卡顿和内存占用问题。
 		go func() {
 			defer close(jobs)
-			i := 0
-			for {
+			_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 				if ctx.Err() != nil {
-					return
+					return filepath.SkipAll
 				}
-				var path string
-				filesMu.Lock()
-				if i < len(files) {
-					path = files[i]
-					i++
+				if err != nil {
+					return nil
 				}
-				filesMu.Unlock()
-				if path != "" {
-					jobs <- path
-					continue
+				if d.IsDir() {
+					return nil
+				}
+				ext := strings.ToLower(filepath.Ext(d.Name()))
+				if _, ok := daemonSupportedExt[ext]; !ok {
+					return nil
 				}
 				select {
-				case <-indexDone:
-					return
-				case <-time.After(60 * time.Millisecond):
+				case jobs <- path:
+				case <-ctx.Done():
+					return filepath.SkipAll
 				}
-			}
+				return nil
+			})
 		}()
 
 		go func() {

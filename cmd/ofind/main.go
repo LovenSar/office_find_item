@@ -31,6 +31,8 @@ func main() {
 
 	// Windows 下双击启动通常不带参数：默认进入 UI。
 	if runtime.GOOS == "windows" && len(os.Args) == 1 {
+		// 尝试释放控制台（如果是以 console 子系统编译），避免拖着黑框。
+		winutil.DetachConsole()
 		if err := app.RunUI(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

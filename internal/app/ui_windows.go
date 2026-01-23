@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -42,9 +43,16 @@ func RunUI() error {
 		debounceMu sync.Mutex
 		debounceT  *time.Timer
 		gen        uint64
+		closeOnce  sync.Once
+		closeCh    = make(chan struct{})
+		uiClosed   uint32
 
 		model = NewResultsModel()
+
+		// 结果缓冲通道，避免大量 Synchronize 导致 UI 闪退
+		resultCh = make(chan daemonOut, 2000)
 	)
+
 
 	clearSelection := func() {
 		if tableView == nil {
@@ -154,26 +162,15 @@ func RunUI() error {
 				continue
 			}
 			dproc, err := startDaemonProcess(exePath, root, 0, func(out daemonOut) {
-				mw.Synchronize(func() {
-					debounceMu.Lock()
-					curGen := gen
-					debounceMu.Unlock()
-					if out.QueryID != curGen {
-						return
-					}
-					switch out.Type {
-					case "result":
-						snip := strings.Join(out.Snippets, "  |  ")
-						model.Append(ResultRow{Path: out.Path, Snippet: snip})
-						status.SetText(fmt.Sprintf("Matches: %d", model.RowCount()))
-					case "done":
-						status.SetText(fmt.Sprintf("Done. Matches: %d", model.RowCount()))
-					case "status":
-						if out.Message != "" {
-							status.SetText(out.Message)
-						}
-					}
-				})
+				// 发送到聚合通道，由单独协程批量刷入 UI
+				if atomic.LoadUint32(&uiClosed) != 0 {
+					return
+				}
+				select {
+				case resultCh <- out:
+				default:
+					// 通道满则丢弃（极少发生）
+				}
 			})
 			if err == nil {
 				daemons[root] = dproc
@@ -251,18 +248,20 @@ func RunUI() error {
 					declarative.Label{Text: "Query 3"},
 					declarative.LineEdit{AssignTo: &query3Edit},
 					declarative.PushButton{AssignTo: &btnStop, Text: "停止", Enabled: false, OnClicked: stopSearch, ColumnSpan: 6},
+					declarative.Label{Text: "提示：在上方 Query/Query2/Query3 输入关键词（交集匹配），停止输入约 400ms 后会自动开始搜索；双击结果可在资源管理器中定位。", ColumnSpan: 6},
 				},
 			},
-			declarative.Label{AssignTo: &status, Text: "Ready"},
+			declarative.Label{AssignTo: &status, Text: "Ready（输入后自动搜索）"},
 			declarative.TableView{
-				AssignTo: &tableView,
-				Model:    model,
+				AssignTo:            &tableView,
+				Model:               model,
 				LastColumnStretched: true,
-				ColumnsSizable:       true,
+				ColumnsSizable:      true,
+				// DoubleBuffering:     true, // 双缓冲在部分 Win7 环境下可能导致内容不显示，暂关闭
 				Columns: []declarative.TableViewColumn{
 					{Title: "#", Width: 44},
 					{Title: "Path", Width: 520},
-					{Title: "Context (±30)", Width: 360},
+					{Title: "Context", Width: 360},
 				},
 				OnItemActivated: revealSelected,
 			},
@@ -273,7 +272,121 @@ func RunUI() error {
 		return err
 	}
 
+	// UI 结果聚合协程：
+	// - 合并刷新，避免每条结果都 Synchronize 导致 UI 卡顿
+	// - 不干预用户滚动/拖动，避免“盲点双击、延迟出现”的体验
+	go func() {
+		const maxBufferItems = 20000
+		buffer := make([]daemonOut, 0, 2048)
+		// 小批量刷新：避免一次性处理太多导致 UI 线程长时间阻塞（表现为白屏/无响应）
+		ticker := time.NewTicker(80 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-closeCh:
+				return
+			case out := <-resultCh:
+				if atomic.LoadUint32(&uiClosed) != 0 {
+					continue
+				}
+				if len(buffer) < maxBufferItems {
+					buffer = append(buffer, out)
+				} else {
+					// buffer 满了，丢弃后续数据以防 32 位内存爆掉
+				}
+			case <-ticker.C:
+				if atomic.LoadUint32(&uiClosed) != 0 {
+					return
+				}
+				if mw == nil || len(buffer) == 0 {
+					continue
+				}
+				// 只取一小段批次，保证每次 UI 刷新足够快
+				const maxBatchPerTick = 400
+				n := len(buffer)
+				if n > maxBatchPerTick {
+					n = maxBatchPerTick
+				}
+				batch := make([]daemonOut, n)
+				copy(batch, buffer[:n])
+				buffer = buffer[n:]
+
+				mw.Synchronize(func() {
+					if atomic.LoadUint32(&uiClosed) != 0 {
+						return
+					}
+					// 获取当前 valid 的 queryID
+					debounceMu.Lock()
+					curGen := gen
+					debounceMu.Unlock()
+
+					rowsToAdd := make([]ResultRow, 0, 256)
+					var lastStatusMsg string
+					var isDone bool
+					start := time.Now()
+					const maxAppendPerTick = 200
+					const maxUITick = 25 * time.Millisecond
+
+					for _, out := range batch {
+						if out.QueryID != curGen {
+							continue
+						}
+						switch out.Type {
+						case "result":
+							if len(rowsToAdd) >= maxAppendPerTick {
+								continue
+							}
+							if time.Since(start) > maxUITick {
+								continue
+							}
+							snip := strings.Join(out.Snippets, "  |  ")
+							rowsToAdd = append(rowsToAdd, ResultRow{Path: out.Path, Snippet: snip})
+						case "status":
+							if out.Message != "" {
+								lastStatusMsg = out.Message
+							}
+						case "done":
+							isDone = true
+						}
+					}
+
+					if len(rowsToAdd) > 0 {
+						const MaxResults = 5000
+						currentLen := model.RowCount()
+						if currentLen < MaxResults {
+							if currentLen+len(rowsToAdd) > MaxResults {
+								rowsToAdd = rowsToAdd[:MaxResults-currentLen]
+								lastStatusMsg = fmt.Sprintf("结果过多，只显示前 %d 条", MaxResults)
+							}
+							model.AppendMany(rowsToAdd)
+						}
+					}
+
+					// 更新状态栏
+					if isDone {
+						status.SetText(fmt.Sprintf("Done. Matches: %d", model.RowCount()))
+					} else if lastStatusMsg != "" {
+						status.SetText(lastStatusMsg)
+					} else if len(rowsToAdd) > 0 {
+						status.SetText(fmt.Sprintf("Matches: %d", model.RowCount()))
+					}
+				})
+			}
+		}
+	}()
+
 	mw.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+		closeOnce.Do(func() {
+			atomic.StoreUint32(&uiClosed, 1)
+			close(closeCh)
+		})
+		debounceMu.Lock()
+		if debounceT != nil {
+			debounceT.Stop()
+			debounceT = nil
+		}
+		debounceMu.Unlock()
 		daemonMu.Lock()
 		for _, d := range daemons {
 			d.Close()
