@@ -3,13 +3,30 @@ package extract
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/ledongthuc/pdf"
 )
+
+func pdfPageWorkers() int {
+	// 并行解析 PDF 页的 worker 数（仅影响纯 Go PDF fallback）。
+	// 默认关闭（=1），避免在某些 PDF 上导致 CPU/内存暴涨；可通过环境变量显式开启。
+	const def = 1
+	v := strings.TrimSpace(os.Getenv("OFIND_PDF_PAGE_WORKERS"))
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n <= 0 {
+		return def
+	}
+	return n
+}
 
 func pdfMaxFileBytes() int64 {
 	// 纯 Go PDF 解析在大文件上可能产生巨量内存/CPU；这里给出保守默认值。
@@ -101,12 +118,28 @@ func pdfFindFirst(ctx context.Context, path string, query string, contextLen int
 		return false, "", ctx.Err()
 	}
 
-	reader, err := r.GetPlainText()
-	if err != nil {
-		return false, "", err
+	pages := r.NumPage()
+	fonts := make(map[string]*pdf.Font)
+	nextPage := 1
+	next := func(ctx context.Context) (string, error) {
+		if nextPage > pages {
+			return "", io.EOF
+		}
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		p := r.Page(nextPage)
+		nextPage++
+		for _, name := range p.Fonts() {
+			if _, ok := fonts[name]; ok {
+				continue
+			}
+			f := p.Font(name)
+			fonts[name] = &f
+		}
+		return p.GetPlainText(fonts)
 	}
-	// 使用流式查找，避免一次性读取整个PDF文本
-	return pdfFindFirstStream(ctx, reader, q, contextLen)
+	return streamFindFirst(ctx, next, q, contextLen)
 }
 
 func pdfExtractText(ctx context.Context, path string, maxBytes int64) (string, error) {
@@ -143,16 +176,170 @@ func pdfExtractText(ctx context.Context, path string, maxBytes int64) (string, e
 		return "", ctx.Err()
 	}
 
-	// 只读取 maxBytes，避免 pdf.GetPlainText 的输出过大造成内存暴涨。
-	reader, err := r.GetPlainText()
-	if err != nil {
-		return "", err
+	workers := pdfPageWorkers()
+	if workers <= 1 {
+		return pdfExtractTextSequential(ctx, r, maxBytes)
 	}
-	b, err := readAllLimit(reader, maxBytes)
-	if err != nil {
-		return "", err
-	}
-	text := string(b)
+	return pdfExtractTextParallel(ctx, r, maxBytes, workers)
+}
 
-	return text, nil
+func pdfExtractTextSequential(ctx context.Context, r *pdf.Reader, maxBytes int64) (string, error) {
+	var sb strings.Builder
+	var approx int64
+
+	pages := r.NumPage()
+	fonts := make(map[string]*pdf.Font)
+	for i := 1; i <= pages; i++ {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		remaining := maxBytes - approx
+		if remaining <= 0 {
+			return sb.String(), nil
+		}
+
+		p := r.Page(i)
+		for _, name := range p.Fonts() {
+			if _, ok := fonts[name]; ok {
+				continue
+			}
+			f := p.Font(name)
+			fonts[name] = &f
+		}
+		text, err := p.GetPlainText(fonts)
+		if err != nil {
+			return "", err
+		}
+		if text == "" {
+			continue
+		}
+		if int64(len(text)) > remaining {
+			text = text[:remaining]
+		}
+		sb.WriteString(text)
+		approx += int64(len(text))
+		if approx >= maxBytes {
+			return sb.String(), nil
+		}
+	}
+	return sb.String(), nil
+}
+
+func pdfExtractTextParallel(ctx context.Context, r *pdf.Reader, maxBytes int64, workers int) (string, error) {
+	type pageResult struct {
+		page int
+		text string
+		err  error
+	}
+
+	pages := r.NumPage()
+	if pages <= 1 {
+		return pdfExtractTextSequential(ctx, r, maxBytes)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	jobs := make(chan int, workers*2)
+	results := make(chan pageResult, workers*2)
+
+	// feed jobs
+	go func() {
+		defer close(jobs)
+		for i := 1; i <= pages; i++ {
+			select {
+			case jobs <- i:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for w := 0; w < workers; w++ {
+		go func() {
+			defer wg.Done()
+			// Per-worker font cache; avoids cross-goroutine map races.
+			fonts := make(map[string]*pdf.Font)
+			for pageNum := range jobs {
+				if ctx.Err() != nil {
+					return
+				}
+				p := r.Page(pageNum)
+				for _, name := range p.Fonts() {
+					if _, ok := fonts[name]; ok {
+						continue
+					}
+					f := p.Font(name)
+					fonts[name] = &f
+				}
+				text, err := p.GetPlainText(fonts)
+				select {
+				case results <- pageResult{page: pageNum, text: text, err: err}:
+				case <-ctx.Done():
+					return
+				}
+				if err != nil {
+					return
+				}
+			}
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	var sb strings.Builder
+	var approx int64
+	nextPage := 1
+	pending := make(map[int]string, workers*2)
+
+	for res := range results {
+		if res.err != nil {
+			cancel()
+			return "", res.err
+		}
+		pending[res.page] = res.text
+
+		for {
+			text, ok := pending[nextPage]
+			if !ok {
+				break
+			}
+			delete(pending, nextPage)
+			nextPage++
+
+			if ctx.Err() != nil {
+				return "", ctx.Err()
+			}
+
+			remaining := maxBytes - approx
+			if remaining <= 0 {
+				cancel()
+				return sb.String(), nil
+			}
+			if text != "" {
+				if int64(len(text)) > remaining {
+					text = text[:remaining]
+				}
+				sb.WriteString(text)
+				approx += int64(len(text))
+				if approx >= maxBytes {
+					cancel()
+					return sb.String(), nil
+				}
+			}
+			if nextPage > pages {
+				return sb.String(), nil
+			}
+		}
+	}
+
+	if ctx.Err() != nil {
+		return "", ctx.Err()
+	}
+	return sb.String(), nil
 }
