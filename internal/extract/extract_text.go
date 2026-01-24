@@ -14,8 +14,10 @@ func FileExtractText(ctx context.Context, path string, maxBytes int64) (string, 
 	switch ext {
 	case ".txt", ".md", ".log", ".csv", ".json", ".xml", ".ini", ".yaml", ".yml":
 		return textFileExtractText(ctx, path, maxBytes)
-	case ".docx", ".xlsx", ".pptx":
+	case ".docx", ".xlsx", ".pptx", ".vsdx":
 		return ooxmlExtractText(ctx, path, maxBytes)
+	case ".pdf":
+		return pdfExtractText(ctx, path, maxBytes)
 	default:
 		return ifilterExtractText(ctx, path, maxBytes)
 	}

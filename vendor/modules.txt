@@ -1,3 +1,6 @@
+# github.com/ledongthuc/pdf v0.0.0-20250510234604-a6dfec7e9de4
+## explicit
+github.com/ledongthuc/pdf
 # github.com/lxn/walk v0.0.0-20210112085537-c389da54e794
 ## explicit
 github.com/lxn/walk

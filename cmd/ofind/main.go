@@ -29,9 +29,53 @@ func main() {
 		if err == nil {
 			if debugMode {
 				log.SetOutput(io.MultiWriter(os.Stderr, f))
+				// 监控内存变化与线程数
+				go func() {
+					ticker := time.NewTicker(2 * time.Second)
+					var lastIO winutil.ProcessIOCounters
+					var lastAt time.Time
+					for range ticker.C {
+						var m runtime.MemStats
+						runtime.ReadMemStats(&m)
+
+						ioStat, _ := winutil.GetProcessIOCounters()
+						now := time.Now()
+						dt := now.Sub(lastAt).Seconds()
+						if lastAt.IsZero() || dt <= 0 {
+							dt = 0
+						}
+						dRead := uint64(0)
+						dWrite := uint64(0)
+						if ioStat.ReadBytes >= lastIO.ReadBytes {
+							dRead = ioStat.ReadBytes - lastIO.ReadBytes
+						}
+						if ioStat.WriteBytes >= lastIO.WriteBytes {
+							dWrite = ioStat.WriteBytes - lastIO.WriteBytes
+						}
+						readRate := 0.0
+						writeRate := 0.0
+						if dt > 0 {
+							readRate = float64(dRead) / 1024 / 1024 / dt
+							writeRate = float64(dWrite) / 1024 / 1024 / dt
+						}
+						lastIO = ioStat
+						lastAt = now
+
+						log.Printf("[MONITOR] PID=%d | Goroutines=%d | Alloc=%.2f MiB | TotalAlloc=%.2f MiB | Sys=%.2f MiB | NumGC=%d | IO(R/W)=%.2f/%.2f MiB | IO(R/W)=%.2f/%.2f MiB/s",
+							os.Getpid(), runtime.NumGoroutine(),
+							float64(m.Alloc)/1024/1024,
+							float64(m.TotalAlloc)/1024/1024,
+							float64(m.Sys)/1024/1024,
+							m.NumGC,
+							float64(ioStat.ReadBytes)/1024/1024,
+							float64(ioStat.WriteBytes)/1024/1024,
+							readRate, writeRate)
+					}
+				}()
 			} else {
-				// release：只写文件，不往控制台输出
-				log.SetOutput(f)
+				// release：不输出日志，也不弹窗
+				log.SetOutput(io.Discard)
+				f.Close()
 			}
 		}
 		log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)

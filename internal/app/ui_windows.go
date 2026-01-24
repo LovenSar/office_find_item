@@ -3,6 +3,7 @@
 package app
 
 import (
+	"encoding/csv"
 	"fmt"
 	"os"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/lxn/walk"
 	"github.com/lxn/walk/declarative"
 	"github.com/lxn/win"
+	"office_find_item/internal/extract"
 	"office_find_item/internal/winutil"
 )
 
@@ -33,6 +35,7 @@ func RunUI() error {
 		queryEdit   *walk.LineEdit
 		query2Edit  *walk.LineEdit
 		query3Edit  *walk.LineEdit
+		pdfPureGoCB *walk.CheckBox
 		status      *walk.Label
 		btnStop     *walk.PushButton
 		tableView   *walk.TableView
@@ -40,6 +43,7 @@ func RunUI() error {
 		daemonMu   sync.Mutex
 		daemons    map[string]*daemonProcess
 		rootsKey   string
+		pdfPureKey bool
 		debounceMu sync.Mutex
 		debounceT  *time.Timer
 		gen        uint64
@@ -53,6 +57,30 @@ func RunUI() error {
 		resultCh = make(chan daemonOut, 2000)
 	)
 
+	pdfIFilterOK := extract.HasPDFIFilter()
+
+	statusSuffix := func() string {
+		pdfEngine := "OFF"
+		if pdfPureGoCB != nil && pdfPureGoCB.Checked() {
+			pdfEngine = "ON"
+		}
+		if pdfIFilterOK {
+			return fmt.Sprintf("PDF IFilter: 有 | 内置PDF: %s", pdfEngine)
+		}
+		return fmt.Sprintf("PDF IFilter: 未检测到 | 内置PDF: %s", pdfEngine)
+	}
+
+	setStatus := func(msg string) {
+		if status == nil {
+			return
+		}
+		sfx := statusSuffix()
+		if strings.TrimSpace(msg) == "" {
+			status.SetText(sfx)
+			return
+		}
+		status.SetText(msg + " | " + sfx)
+	}
 
 	clearSelection := func() {
 		if tableView == nil {
@@ -89,8 +117,10 @@ func RunUI() error {
 		daemonMu.Unlock()
 		clearSelection()
 		forceTableRefresh()
-		status.SetText("已取消，等待输入...")
-		btnStop.SetEnabled(false)
+		setStatus("已取消，等待输入...")
+		if btnStop != nil {
+			btnStop.SetEnabled(false)
+		}
 	}
 
 	revealSelected := func() {
@@ -109,12 +139,12 @@ func RunUI() error {
 		if q1 == "" && q2 == "" && q3 == "" {
 			stopSearch()
 			model.Reset()
-			status.SetText("Ready")
+			setStatus("Ready")
 			return
 		}
 		roots := strings.TrimSpace(rootsEdit.Text())
 		if roots == "" {
-			status.SetText("请先选择目录或全盘")
+			setStatus("请先选择目录或全盘")
 			return
 		}
 
@@ -123,7 +153,7 @@ func RunUI() error {
 		clearSelection()
 		forceTableRefresh()
 		btnStop.SetEnabled(true)
-		status.SetText("Searching...")
+		setStatus("Searching...")
 
 		// generation guard
 		debounceMu.Lock()
@@ -142,17 +172,22 @@ func RunUI() error {
 			parts = append(parts, p)
 		}
 		nextKey := strings.Join(parts, ";")
+		enablePureGoPDF := false
+		if pdfPureGoCB != nil {
+			enablePureGoPDF = pdfPureGoCB.Checked()
+		}
 
 		daemonMu.Lock()
 		if daemons == nil {
 			daemons = map[string]*daemonProcess{}
 		}
-		if rootsKey != nextKey {
+		if rootsKey != nextKey || pdfPureKey != enablePureGoPDF {
 			for _, d := range daemons {
 				d.Close()
 			}
 			daemons = map[string]*daemonProcess{}
 			rootsKey = nextKey
+			pdfPureKey = enablePureGoPDF
 		}
 		for _, root := range parts {
 			if root == "" {
@@ -161,7 +196,7 @@ func RunUI() error {
 			if _, ok := daemons[root]; ok {
 				continue
 			}
-			dproc, err := startDaemonProcess(exePath, root, 0, func(out daemonOut) {
+			dproc, err := startDaemonProcess(exePath, root, 0, enablePureGoPDF, func(out daemonOut) {
 				// 发送到聚合通道，由单独协程批量刷入 UI
 				if atomic.LoadUint32(&uiClosed) != 0 {
 					return
@@ -223,7 +258,7 @@ func RunUI() error {
 								rootsEdit.SetText(p)
 							} else {
 								// fallback: 保留现有 roots
-								status.SetText("无法获取桌面目录")
+								setStatus("无法获取桌面目录")
 							}
 						},
 					},
@@ -247,21 +282,71 @@ func RunUI() error {
 					declarative.LineEdit{AssignTo: &query2Edit},
 					declarative.Label{Text: "Query 3"},
 					declarative.LineEdit{AssignTo: &query3Edit},
-					declarative.PushButton{AssignTo: &btnStop, Text: "停止", Enabled: false, OnClicked: stopSearch, ColumnSpan: 6},
+					declarative.CheckBox{
+						AssignTo:   &pdfPureGoCB,
+						Text:       "启用内置 PDF 检索引擎（可能导致内存暴涨）",
+						Checked:    false,
+						ColumnSpan: 6,
+						OnCheckedChanged: func() {
+							// 变更需要重启 daemon 才能生效（通过 env 控制）
+							stopSearch()
+						},
+					},
+					declarative.Label{Text: "建议安装 Office / PDF 阅读器 / WPS（提供 PDF IFilter），更省内存更稳定。", ColumnSpan: 6},
+					declarative.PushButton{AssignTo: &btnStop, Text: "停止", Enabled: false, OnClicked: stopSearch, ColumnSpan: 5},
+					declarative.PushButton{
+						Text: "导出列表",
+						OnClicked: func() {
+							if model.RowCount() == 0 {
+								walk.MsgBox(mw, "提示", "没有结果可导出", walk.MsgBoxIconInformation)
+								return
+							}
+							dlg := new(walk.FileDialog)
+							dlg.Filter = "CSV Files (*.csv)|*.csv"
+							dlg.Title = "导出结果"
+							if ok, _ := dlg.ShowSave(mw); ok {
+								f, err := os.Create(dlg.FilePath)
+								if err != nil {
+									walk.MsgBox(mw, "错误", err.Error(), walk.MsgBoxIconError)
+									return
+								}
+								defer f.Close()
+								f.WriteString("\xEF\xBB\xBF") // BOM
+								w := csv.NewWriter(f)
+								w.Write([]string{"#", "Path", "Extension", "Context", "Size", "Modified"})
+								for i, r := range model.rows {
+									w.Write([]string{
+										fmt.Sprintf("%d", i+1),
+										r.Path,
+										r.Extension,
+										r.Snippet,
+										r.Size,
+										r.ModTime,
+									})
+								}
+								w.Flush()
+								walk.MsgBox(mw, "成功", "导出完成", walk.MsgBoxIconInformation)
+							}
+						},
+						ColumnSpan: 1,
+					},
 					declarative.Label{Text: "提示：在上方 Query/Query2/Query3 输入关键词（交集匹配），停止输入约 400ms 后会自动开始搜索；双击结果可在资源管理器中定位。", ColumnSpan: 6},
 				},
 			},
 			declarative.Label{AssignTo: &status, Text: "Ready（输入后自动搜索）"},
 			declarative.TableView{
-				AssignTo:            &tableView,
-				Model:               model,
+				AssignTo: &tableView,
+				Model:    model,
 				// LastColumnStretched: true, // 用户反馈会导致出现横向滚动条，移除自动拉伸
-				ColumnsSizable:      true,
+				ColumnsSizable: true,
 				// DoubleBuffering:     true, // 双缓冲在部分 Win7 环境下可能导致内容不显示，暂关闭
 				Columns: []declarative.TableViewColumn{
 					{Title: "#", Width: 35},
-					{Title: "Path", Width: 350},
-					{Title: "Context", Width: 400}, // 35+350+400=785，略小于最小窗口宽度 820，确保无横向滚动条
+					{Title: "Path", Width: 280},
+					{Title: "Ext", Width: 45},
+					{Title: "Context", Width: 280},
+					{Title: "Size", Width: 60, Alignment: declarative.AlignFar},
+					{Title: "Modified", Width: 120},
 				},
 				OnItemActivated: revealSelected,
 			},
@@ -271,6 +356,7 @@ func RunUI() error {
 	if err := mwDecl.Create(); err != nil {
 		return err
 	}
+	setStatus("Ready（输入后自动搜索）")
 
 	// UI 结果聚合协程：
 	// - 合并刷新，避免每条结果都 Synchronize 导致 UI 卡顿
@@ -341,7 +427,13 @@ func RunUI() error {
 								continue
 							}
 							snip := strings.Join(out.Snippets, "  |  ")
-							rowsToAdd = append(rowsToAdd, ResultRow{Path: out.Path, Snippet: snip})
+							rowsToAdd = append(rowsToAdd, ResultRow{
+								Path:      out.Path,
+								Snippet:   snip,
+								Extension: out.Extension,
+								Size:      formatSize(out.Size),
+								ModTime:   time.Unix(out.ModTime, 0).Format("2006-01-02 15:04"),
+							})
 						case "status":
 							if out.Message != "" {
 								lastStatusMsg = out.Message
@@ -365,11 +457,11 @@ func RunUI() error {
 
 					// 更新状态栏
 					if isDone {
-						status.SetText(fmt.Sprintf("Done. Matches: %d", model.RowCount()))
+						setStatus(fmt.Sprintf("Done. Matches: %d", model.RowCount()))
 					} else if lastStatusMsg != "" {
-						status.SetText(lastStatusMsg)
+						setStatus(lastStatusMsg)
 					} else if len(rowsToAdd) > 0 {
-						status.SetText(fmt.Sprintf("Matches: %d", model.RowCount()))
+						setStatus(fmt.Sprintf("Matches: %d", model.RowCount()))
 					}
 				})
 			}
@@ -425,10 +517,10 @@ func RunUI() error {
 		q2 := strings.TrimSpace(query2Edit.Text())
 		q3 := strings.TrimSpace(query3Edit.Text())
 		if q1 == "" && q2 == "" && q3 == "" {
-			status.SetText("Ready")
+			setStatus("Ready")
 			return
 		}
-		status.SetText("输入中...停止输入后开始搜索")
+		setStatus("输入中...停止输入后开始搜索")
 		scheduleSearch()
 	}
 
@@ -438,4 +530,17 @@ func RunUI() error {
 
 	_ = mw.Run()
 	return nil
+}
+
+func formatSize(s int64) string {
+	const unit = 1024
+	if s < unit {
+		return fmt.Sprintf("%d B", s)
+	}
+	div, exp := int64(unit), 0
+	for n := s / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(s)/float64(div), "KMGTPE"[exp])
 }

@@ -2,6 +2,7 @@ package extract
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/xml"
 	"errors"
@@ -23,6 +24,7 @@ func ooxmlContains(ctx context.Context, path string, query string) (bool, error)
 	defer zr.Close()
 
 	ext := strings.ToLower(filepath.Ext(path))
+	qb := []byte(q)
 	for _, f := range zr.File {
 		if ctx.Err() != nil {
 			return false, ctx.Err()
@@ -35,7 +37,7 @@ func ooxmlContains(ctx context.Context, path string, query string) (bool, error)
 		if err != nil {
 			continue
 		}
-		ok, rerr := xmlStreamContains(ctx, rc, q)
+		ok, rerr := xmlStreamContains(ctx, rc, qb)
 		_ = rc.Close()
 		if rerr == nil && ok {
 			return true, nil
@@ -57,6 +59,7 @@ func ooxmlFindFirst(ctx context.Context, path string, query string, contextLen i
 	defer zr.Close()
 
 	ext := strings.ToLower(filepath.Ext(path))
+	qb := []byte(q)
 	for _, f := range zr.File {
 		if ctx.Err() != nil {
 			return false, "", ctx.Err()
@@ -69,7 +72,7 @@ func ooxmlFindFirst(ctx context.Context, path string, query string, contextLen i
 		if err != nil {
 			continue
 		}
-		ok, snip, _ := xmlStreamFindFirst(ctx, rc, q, contextLen)
+		ok, snip, _ := xmlStreamFindFirst(ctx, rc, q, qb, contextLen)
 		_ = rc.Close()
 		if ok {
 			return true, snip, nil
@@ -89,12 +92,19 @@ func ooxmlEntryInteresting(ext, name string) bool {
 		return strings.HasPrefix(name, "xl/")
 	case ".pptx":
 		return strings.HasPrefix(name, "ppt/")
+	case ".vsdx":
+		// VSDX 内容通常在 visio/pages/pageX.xml
+		return strings.HasPrefix(name, "visio/pages/")
 	default:
 		return false
 	}
 }
 
-func xmlStreamContains(ctx context.Context, r io.Reader, query string) (bool, error) {
+func xmlStreamContains(ctx context.Context, r io.Reader, query []byte) (bool, error) {
+	// 防止巨大 XML 节点导致内存暴涨；这里只做“尽力而为”扫描。
+	const maxScanBytes = 20 * 1024 * 1024
+	r = io.LimitReader(r, maxScanBytes)
+
 	dec := xml.NewDecoder(r)
 	for {
 		if ctx.Err() != nil {
@@ -109,14 +119,18 @@ func xmlStreamContains(ctx context.Context, r io.Reader, query string) (bool, er
 		}
 		switch v := tok.(type) {
 		case xml.CharData:
-			if strings.Contains(string(v), query) {
+			if len(query) > 0 && bytes.Contains(v, query) {
 				return true, nil
 			}
 		}
 	}
 }
 
-func xmlStreamFindFirst(ctx context.Context, r io.Reader, query string, contextLen int) (bool, string, error) {
+func xmlStreamFindFirst(ctx context.Context, r io.Reader, query string, queryBytes []byte, contextLen int) (bool, string, error) {
+	// 防止巨大 XML 节点导致内存暴涨；这里只做“尽力而为”扫描。
+	const maxScanBytes = 20 * 1024 * 1024
+	r = io.LimitReader(r, maxScanBytes)
+
 	dec := xml.NewDecoder(r)
 	for {
 		if ctx.Err() != nil {
@@ -131,6 +145,10 @@ func xmlStreamFindFirst(ctx context.Context, r io.Reader, query string, contextL
 		}
 		switch v := tok.(type) {
 		case xml.CharData:
+			// 大多数 CharData 不命中，先用 bytes 快速判断，避免 string(v) 大量分配。
+			if len(queryBytes) > 0 && !bytes.Contains(v, queryBytes) {
+				continue
+			}
 			text := string(v)
 			if snips := FindSnippets(text, query, contextLen, 1); len(snips) > 0 {
 				return true, snips[0], nil
@@ -162,7 +180,18 @@ func ooxmlExtractText(ctx context.Context, path string, maxBytes int64) (string,
 		if err != nil {
 			continue
 		}
-		dec := xml.NewDecoder(rc)
+		// 限制每个 entry 的读取量，避免巨大的 XML 节点导致内存暴涨。
+		remaining := maxBytes - approx
+		if remaining <= 0 {
+			_ = rc.Close()
+			break
+		}
+		const overhead = 256 * 1024
+		limit := remaining + overhead
+		if limit < 64*1024 {
+			limit = 64 * 1024
+		}
+		dec := xml.NewDecoder(io.LimitReader(rc, limit))
 		for {
 			if ctx.Err() != nil {
 				_ = rc.Close()
@@ -173,11 +202,19 @@ func ooxmlExtractText(ctx context.Context, path string, maxBytes int64) (string,
 				break
 			}
 			if cd, ok := tok.(xml.CharData); ok {
-				chunk := string(cd)
-				if chunk != "" {
-					sb.WriteString(chunk)
+				if len(cd) > 0 {
+					remaining = maxBytes - approx
+					if remaining <= 0 {
+						_ = rc.Close()
+						return sb.String(), nil
+					}
+					toWrite := cd
+					if int64(len(toWrite)) > remaining {
+						toWrite = toWrite[:remaining]
+					}
+					_, _ = sb.Write(toWrite)
 					sb.WriteByte(' ')
-					approx += int64(len(chunk)) + 1
+					approx += int64(len(toWrite)) + 1
 					if approx >= maxBytes {
 						_ = rc.Close()
 						return sb.String(), nil

@@ -9,11 +9,14 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"office_find_item/internal/cache"
 	"office_find_item/internal/extract"
@@ -31,11 +34,14 @@ type daemonCmd struct {
 }
 
 type daemonOut struct {
-	Type     string   `json:"type"`
-	QueryID  uint64   `json:"queryId"`
-	Path     string   `json:"path,omitempty"`
-	Snippets []string `json:"snippets,omitempty"`
-	Message  string   `json:"message,omitempty"`
+	Type      string   `json:"type"`
+	QueryID   uint64   `json:"queryId"`
+	Path      string   `json:"path,omitempty"`
+	Snippets  []string `json:"snippets,omitempty"`
+	Message   string   `json:"message,omitempty"`
+	Extension string   `json:"extension,omitempty"`
+	Size      int64    `json:"size,omitempty"`
+	ModTime   int64    `json:"modTime,omitempty"`
 }
 
 var daemonSupportedExt = map[string]struct{}{
@@ -55,6 +61,7 @@ var daemonSupportedExt = map[string]struct{}{
 	".ppt":  {},
 	".pptx": {},
 	".pdf":  {},
+	".vsdx": {},
 }
 
 func RunDaemon(opts CLIOptions) error {
@@ -73,11 +80,6 @@ func RunDaemon(opts CLIOptions) error {
 	}
 	c := &cache.Cache{Root: filepath.Join(cacheRoot, "text"), MaxTextBytes: 2 * 1024 * 1024}
 
-	// 移除全量内存缓存，改为流式遍历，避免全盘搜索时 OOM 或启动卡顿。
-	// filesMu := sync.Mutex{}
-	// files := make([]string, 0, 1024)
-	// indexDone := make(chan struct{})
-
 	in := bufio.NewReader(os.Stdin)
 	enc := json.NewEncoder(os.Stdout)
 	outMu := sync.Mutex{}
@@ -91,6 +93,80 @@ func RunDaemon(opts CLIOptions) error {
 		searchMu sync.Mutex
 		cancel   context.CancelFunc
 	)
+
+	debugEnabled := os.Getenv("OFIND_DEBUG_CONSOLE") == "1" || os.Getenv("OFIND_DEBUG") == "1"
+	type currentWork struct {
+		Path  string
+		Start time.Time
+	}
+	var cur atomic.Value
+	cur.Store(currentWork{})
+	var processed uint64
+
+	startQueryMonitor := func(ctx context.Context, cmd daemonCmd) {
+		if !debugEnabled {
+			return
+		}
+		go func() {
+			ticker := time.NewTicker(2 * time.Second)
+			defer ticker.Stop()
+			var lastIO winutil.ProcessIOCounters
+			var lastAt time.Time
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+				}
+
+				var m runtime.MemStats
+				runtime.ReadMemStats(&m)
+
+				ioStat, _ := winutil.GetProcessIOCounters()
+				now := time.Now()
+				dt := now.Sub(lastAt).Seconds()
+				if lastAt.IsZero() || dt <= 0 {
+					dt = 0
+				}
+				dRead := uint64(0)
+				dWrite := uint64(0)
+				if ioStat.ReadBytes >= lastIO.ReadBytes {
+					dRead = ioStat.ReadBytes - lastIO.ReadBytes
+				}
+				if ioStat.WriteBytes >= lastIO.WriteBytes {
+					dWrite = ioStat.WriteBytes - lastIO.WriteBytes
+				}
+				readRate := 0.0
+				writeRate := 0.0
+				if dt > 0 {
+					readRate = float64(dRead) / 1024 / 1024 / dt
+					writeRate = float64(dWrite) / 1024 / 1024 / dt
+				}
+				lastIO = ioStat
+				lastAt = now
+
+				cw, _ := cur.Load().(currentWork)
+				curFor := time.Duration(0)
+				if cw.Path != "" && !cw.Start.IsZero() {
+					curFor = time.Since(cw.Start)
+				}
+
+				// 注意：这里是 debug 日志，用于定位卡顿/内存暴涨。路径可能较长，但更利于定位具体文件。
+				// processed 为近似计数（job 被取出即算一次）。
+				// Use log.Printf (same output as ofind_debug.log in debug mode).
+				// Example:
+				// [QMON] QueryID=1 | Root=E:\Docs | Processed=123 | Alloc=... | IO(R/W)=... | IO(R/W)=.../s | Cur=... | CurFor=...
+				// Keep format stable-ish for grep.
+				log.Printf("[QMON] PID=%d | QueryID=%d | Root=%s | Processed=%d | Goroutines=%d | Alloc=%.2f MiB | Sys=%.2f MiB | NumGC=%d | IO(R/W)=%.2f/%.2f MiB | IO(R/W)=%.2f/%.2f MiB/s | CurFor=%s | Cur=%s",
+					os.Getpid(), cmd.QueryID, root, atomic.LoadUint64(&processed), runtime.NumGoroutine(),
+					float64(m.Alloc)/1024/1024, float64(m.Sys)/1024/1024, m.NumGC,
+					float64(ioStat.ReadBytes)/1024/1024, float64(ioStat.WriteBytes)/1024/1024,
+					readRate, writeRate,
+					curFor.Truncate(10*time.Millisecond).String(),
+					cw.Path)
+			}
+		}()
+	}
 
 	startSearch := func(cmd daemonCmd) {
 		termsRaw := []string{strings.TrimSpace(cmd.Query), strings.TrimSpace(cmd.Query2), strings.TrimSpace(cmd.Query3)}
@@ -115,6 +191,10 @@ func RunDaemon(opts CLIOptions) error {
 			emit(daemonOut{Type: "status", QueryID: cmd.QueryID, Message: "idle"})
 			return
 		}
+
+		atomic.StoreUint64(&processed, 0)
+		cur.Store(currentWork{})
+		startQueryMonitor(ctx, cmd)
 
 		workers := opts.Workers
 		if workers <= 0 {
@@ -147,6 +227,9 @@ func RunDaemon(opts CLIOptions) error {
 					if ctx.Err() != nil {
 						return
 					}
+					atomic.AddUint64(&processed, 1)
+					startAt := time.Now()
+					cur.Store(currentWork{Path: p, Start: startAt})
 
 					fileName := filepath.Base(p)
 					fileNameLower := strings.ToLower(fileName)
@@ -167,10 +250,61 @@ func RunDaemon(opts CLIOptions) error {
 
 					var text string
 					if needText {
+						ext := strings.ToLower(filepath.Ext(p))
+						var (
+							st       os.FileInfo
+							statErr  error
+							sizeHint int64
+						)
+						st, statErr = os.Stat(p)
+						if statErr == nil {
+							sizeHint = st.Size()
+						}
+
+						needMemProbe := debugEnabled && (sizeHint >= 5*1024*1024 ||
+							ext == ".docx" || ext == ".xlsx" || ext == ".pptx" || ext == ".vsdx" || ext == ".pdf")
+						var before runtime.MemStats
+						if needMemProbe {
+							runtime.ReadMemStats(&before)
+						}
+
 						t, err := c.GetOrExtract(ctx, p, func(ctx context.Context, path string) (string, error) {
 							return extract.FileExtractText(ctx, path, c.MaxTextBytes)
 						})
+
+						if needMemProbe {
+							var after runtime.MemStats
+							runtime.ReadMemStats(&after)
+							if after.Alloc > before.Alloc {
+								delta := after.Alloc - before.Alloc
+								// 只记录明显的内存“尖峰”，避免日志爆炸。
+								if delta >= 256*1024*1024 {
+									log.Printf("[MEMSPIKE] PID=%d | QueryID=%d | Delta=%.2f MiB | Alloc=%.2f MiB | Sys=%.2f MiB | Size=%d | Ext=%s | Path=%s",
+										os.Getpid(), cmd.QueryID,
+										float64(delta)/1024/1024,
+										float64(after.Alloc)/1024/1024,
+										float64(after.Sys)/1024/1024,
+										sizeHint,
+										ext,
+										p)
+								}
+							}
+						}
+
 						if err != nil {
+							// debug：记录慢/异常文件，便于定位。
+							if debugEnabled {
+								elapsed := time.Since(startAt)
+								if elapsed >= 800*time.Millisecond {
+									if st != nil {
+										log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Size=%d | Ext=%s | Path=%s | Err=%v",
+											os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), sizeHint, ext, p, err)
+									} else {
+										log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Path=%s | Err=%v",
+											os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), p, err)
+									}
+								}
+							}
 							continue
 						}
 						text = t
@@ -207,9 +341,47 @@ func RunDaemon(opts CLIOptions) error {
 						}
 					}
 					if !allMatch || len(snipsOut) == 0 {
+						if debugEnabled {
+							elapsed := time.Since(startAt)
+							// 只记录慢的未命中：通常意味着提取/解压很慢或文件很大。
+							if elapsed >= 1200*time.Millisecond {
+								if st, serr := os.Stat(p); serr == nil {
+									log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Size=%d | Ext=%s | Path=%s | Match=0",
+										os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), st.Size(), strings.ToLower(filepath.Ext(p)), p)
+								} else {
+									log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Path=%s | Match=0",
+										os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), p)
+								}
+							}
+						}
 						continue
 					}
-					emit(daemonOut{Type: "result", QueryID: cmd.QueryID, Path: p, Snippets: snipsOut})
+
+					var (
+						size    int64
+						modTime int64
+					)
+					if st, err := os.Stat(p); err == nil {
+						size = st.Size()
+						modTime = st.ModTime().Unix()
+					}
+					emit(daemonOut{
+						Type:      "result",
+						QueryID:   cmd.QueryID,
+						Path:      p,
+						Snippets:  snipsOut,
+						Extension: strings.ToLower(filepath.Ext(p)),
+						Size:      size,
+						ModTime:   modTime,
+					})
+
+					if debugEnabled {
+						elapsed := time.Since(startAt)
+						if elapsed >= 800*time.Millisecond {
+							log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Size=%d | Ext=%s | Path=%s | Snips=%d",
+								os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), size, strings.ToLower(filepath.Ext(p)), p, len(snipsOut))
+						}
+					}
 				}
 			}()
 		}
@@ -242,6 +414,7 @@ func RunDaemon(opts CLIOptions) error {
 
 		go func() {
 			wg.Wait()
+			cur.Store(currentWork{})
 			emit(daemonOut{Type: "done", QueryID: cmd.QueryID})
 		}()
 	}

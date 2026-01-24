@@ -11,8 +11,10 @@ func FileFindFirst(ctx context.Context, path string, query string, contextLen in
 	switch ext {
 	case ".txt", ".md", ".log", ".csv", ".json", ".xml", ".ini", ".yaml", ".yml":
 		return textFileFindFirst(ctx, path, query, contextLen)
-	case ".docx", ".xlsx", ".pptx":
+	case ".docx", ".xlsx", ".pptx", ".vsdx":
 		return ooxmlFindFirst(ctx, path, query, contextLen)
+	case ".pdf":
+		return pdfFindFirst(ctx, path, query, contextLen)
 	default:
 		// .doc/.xls/.ppt/.pdf 等：在 Windows 下用 IFilter；非 Windows 则返回不支持
 		return ifilterFindFirst(ctx, path, query, contextLen)

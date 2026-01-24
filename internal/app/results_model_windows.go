@@ -5,8 +5,11 @@ package app
 import "github.com/lxn/walk"
 
 type ResultRow struct {
-	Path    string
-	Snippet string
+	Path      string
+	Snippet   string
+	Extension string
+	Size      string
+	ModTime   string
 }
 
 type ResultsModel struct {
@@ -32,7 +35,13 @@ func (m *ResultsModel) Value(row, col int) interface{} {
 	case 1:
 		return m.rows[row].Path
 	case 2:
+		return m.rows[row].Extension
+	case 3:
 		return m.rows[row].Snippet
+	case 4:
+		return m.rows[row].Size
+	case 5:
+		return m.rows[row].ModTime
 	default:
 		return ""
 	}

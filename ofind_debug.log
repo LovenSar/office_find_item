@@ -1,110 +1,203 @@
-2026/01/23 22:55:55 Starting UI mode...
-2026/01/23 22:56:08 PANIC: runtime error: index out of range [345] with length 264
-Stack:
-goroutine 1 [running, locked to thread]:
-runtime/debug.Stack()
-	runtime/debug/stack.go:24 +0x83
-main.main.func1()
-	office_find_item/cmd/ofind/main.go:32 +0x46
-panic({0x12484e0, 0xa78c650})
-	runtime/panic.go:884 +0x1b7
-github.com/lxn/walk.(*TableView).lvWndProc(0xa456a80, 0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3d114)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2124 +0x1fd7
-github.com/lxn/walk.tableViewNormalLVWndProc(0xd14a0, 0x4e, 0x0, 0xd3d114)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
-github.com/lxn/walk.(*TableView).WndProc(0xa456a80, 0x6169a, 0x4e, 0x0, 0xd3d114)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2610 +0x11f
-github.com/lxn/walk.defaultWndProc(0x6169a, 0x4e, 0x0, 0xd3d114)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/window.go:2159 +0xb2
-syscall.SyscallN(0x69696300, {0xa469a6c, 0x6, 0x6})
-	runtime/syscall_windows.go:557 +0x11d
-syscall.Syscall6(0x69696300, 0x5, 0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3f150, 0x0)
-	runtime/syscall_windows.go:501 +0x62
-github.com/lxn/win.CallWindowProc(0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3f150)
-	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
-github.com/lxn/walk.(*TableView).lvWndProc(0xa456a80, 0x70d98430, 0xd14a0, 0x4e, 0x0, 0xd3f150)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
-github.com/lxn/walk.tableViewNormalLVWndProc(0xd14a0, 0x4e, 0x0, 0xd3f150)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
-syscall.SyscallN(0x69696300, {0xa469fd0, 0x6, 0x6})
-	runtime/syscall_windows.go:557 +0x11d
-syscall.Syscall6(0x69696300, 0x5, 0x70d98430, 0xd14a0, 0x201, 0x1, 0xa101a6, 0x0)
-	runtime/syscall_windows.go:501 +0x62
-github.com/lxn/win.CallWindowProc(0x70d98430, 0xd14a0, 0x201, 0x1, 0xa101a6)
-	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
-github.com/lxn/walk.(*TableView).lvWndProc(0xa456a80, 0x70d98430, 0xd14a0, 0x201, 0x1, 0xa101a6)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
-github.com/lxn/walk.tableViewNormalLVWndProc(0xd14a0, 0x201, 0x1, 0xa101a6)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
-syscall.SyscallN(0x774dae80, {0xa46a534, 0x3, 0x3})
-	runtime/syscall_windows.go:557 +0x11d
-syscall.Syscall(0x774dae80, 0x2, 0xc1478, 0x155b790, 0x0)
-	runtime/syscall_windows.go:495 +0x57
-github.com/lxn/win.IsDialogMessage(0xc1478, 0x155b790)
-	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2834 +0x76
-github.com/lxn/walk.(*FormBase).mainLoop(0xa4c2000)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/mainloop_default.go:35 +0xfb
-github.com/lxn/walk.(*FormBase).Run(0xa4c2000)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/form.go:375 +0x1d8
-office_find_item/internal/app.RunUI()
-	office_find_item/internal/app/ui_windows.go:439 +0x1b28
-main.main()
-	office_find_item/cmd/ofind/main.go:66 +0x435
-
-2026/01/23 23:00:05 Starting UI mode...
-2026/01/23 23:00:19 PANIC: runtime error: index out of range [415] with length 264
-Stack:
-goroutine 1 [running, locked to thread]:
-runtime/debug.Stack()
-	runtime/debug/stack.go:24 +0x83
-main.main.func1()
-	office_find_item/cmd/ofind/main.go:32 +0x46
-panic({0x12484e0, 0xa895660})
-	runtime/panic.go:884 +0x1b7
-github.com/lxn/walk.(*TableView).lvWndProc(0xa856a80, 0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18fd284)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2124 +0x1fd7
-github.com/lxn/walk.tableViewNormalLVWndProc(0x3a1290, 0x4e, 0x0, 0x18fd284)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
-github.com/lxn/walk.(*TableView).WndProc(0xa856a80, 0x416da, 0x4e, 0x0, 0x18fd284)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2610 +0x11f
-github.com/lxn/walk.defaultWndProc(0x416da, 0x4e, 0x0, 0x18fd284)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/window.go:2159 +0xb2
-syscall.SyscallN(0x774d7130, {0xa869a6c, 0x6, 0x6})
-	runtime/syscall_windows.go:557 +0x11d
-syscall.Syscall6(0x774d7130, 0x5, 0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18ff2a0, 0x0)
-	runtime/syscall_windows.go:501 +0x62
-github.com/lxn/win.CallWindowProc(0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18ff2a0)
-	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
-github.com/lxn/walk.(*TableView).lvWndProc(0xa856a80, 0x70d98430, 0x3a1290, 0x4e, 0x0, 0x18ff2a0)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
-github.com/lxn/walk.tableViewNormalLVWndProc(0x3a1290, 0x4e, 0x0, 0x18ff2a0)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
-syscall.SyscallN(0x774d7130, {0xa869fd0, 0x6, 0x6})
-	runtime/syscall_windows.go:557 +0x11d
-syscall.Syscall6(0x774d7130, 0x5, 0x70d98430, 0x3a1290, 0x201, 0x1, 0xc402a6, 0x0)
-	runtime/syscall_windows.go:501 +0x62
-github.com/lxn/win.CallWindowProc(0x70d98430, 0x3a1290, 0x201, 0x1, 0xc402a6)
-	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2138 +0x86
-github.com/lxn/walk.(*TableView).lvWndProc(0xa856a80, 0x70d98430, 0x3a1290, 0x201, 0x1, 0xc402a6)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:2486 +0xfe3
-github.com/lxn/walk.tableViewNormalLVWndProc(0x3a1290, 0x201, 0x1, 0xc402a6)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/tableview.go:1934 +0x195
-syscall.SyscallN(0x774dae80, {0xa86a534, 0x3, 0x3})
-	runtime/syscall_windows.go:557 +0x11d
-syscall.Syscall(0x774dae80, 0x2, 0x9140a, 0x1b42588, 0x0)
-	runtime/syscall_windows.go:495 +0x57
-github.com/lxn/win.IsDialogMessage(0x9140a, 0x1b42588)
-	github.com/lxn/win@v0.0.0-20210218163916-a377121e959e/user32.go:2834 +0x76
-github.com/lxn/walk.(*FormBase).mainLoop(0xa8c6000)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/mainloop_default.go:35 +0xfb
-github.com/lxn/walk.(*FormBase).Run(0xa8c6000)
-	github.com/lxn/walk@v0.0.0-20210112085537-c389da54e794/form.go:375 +0x1d8
-office_find_item/internal/app.RunUI()
-	office_find_item/internal/app/ui_windows.go:439 +0x1b28
-main.main()
-	office_find_item/cmd/ofind/main.go:66 +0x435
-
-2026/01/23 23:01:16 Starting UI mode...
-2026/01/23 23:07:24.098932 main.go:71: Starting UI mode...
-2026/01/23 23:07:29.865717 main.go:71: Starting UI mode...
-2026/01/23 23:17:55.993148 main.go:86: Starting UI mode...
+2026/01/24 14:17:08.538239 main.go:130: Starting UI mode...
+2026/01/24 14:17:10.552037 main.go:64: [MONITOR] PID=15580 | Goroutines=4 | Alloc=1.35 MiB | TotalAlloc=1.35 MiB | Sys=11.11 MiB | NumGC=0 | IO(R/W)=30.87/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:12.542565 main.go:64: [MONITOR] PID=15580 | Goroutines=4 | Alloc=1.35 MiB | TotalAlloc=1.35 MiB | Sys=11.11 MiB | NumGC=0 | IO(R/W)=30.87/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:14.548060 main.go:64: [MONITOR] PID=15580 | Goroutines=4 | Alloc=1.39 MiB | TotalAlloc=1.39 MiB | Sys=11.11 MiB | NumGC=0 | IO(R/W)=30.87/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:16.540809 main.go:64: [MONITOR] PID=15580 | Goroutines=4 | Alloc=1.39 MiB | TotalAlloc=1.39 MiB | Sys=11.11 MiB | NumGC=0 | IO(R/W)=30.87/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:18.538612 main.go:64: [MONITOR] PID=15580 | Goroutines=4 | Alloc=1.47 MiB | TotalAlloc=1.47 MiB | Sys=11.11 MiB | NumGC=0 | IO(R/W)=30.87/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:20.545583 main.go:64: [MONITOR] PID=15580 | Goroutines=4 | Alloc=1.47 MiB | TotalAlloc=1.47 MiB | Sys=11.11 MiB | NumGC=0 | IO(R/W)=31.46/0.00 MiB | IO(R/W)=0.30/0.00 MiB/s
+2026/01/24 14:17:22.551214 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.18 MiB | TotalAlloc=2.18 MiB | Sys=15.18 MiB | NumGC=0 | IO(R/W)=109.61/0.00 MiB | IO(R/W)=38.96/0.00 MiB/s
+2026/01/24 14:17:23.664958 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=1.18 MiB | TotalAlloc=442.03 MiB | Sys=30.82 MiB | NumGC=319 | IO(R/W)=21.54/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:23.665758 daemon_windows.go:160: [QMON] PID=18468 | QueryID=6 | Root=C:\ | Processed=4372 | Goroutines=21 | Alloc=1.26 MiB | Sys=30.82 MiB | NumGC=319 | IO(R/W)=21.54/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=0s | Cur=C:\Program Files\Git\usr\share\vim\vim91\tutor\tutor.tutor.json
+2026/01/24 14:17:23.760073 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=9.04 MiB | TotalAlloc=3845.08 MiB | Sys=62.80 MiB | NumGC=1039 | IO(R/W)=187.16/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:23.760073 daemon_windows.go:160: [QMON] PID=13756 | QueryID=6 | Root=D:\ | Processed=4776 | Goroutines=21 | Alloc=8.03 MiB | Sys=62.80 MiB | NumGC=1040 | IO(R/W)=187.21/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=0s | Cur=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20210130.csv
+2026/01/24 14:17:23.929792 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=4.62 MiB | TotalAlloc=2038.98 MiB | Sys=201.84 MiB | NumGC=195 | IO(R/W)=83.37/0.03 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:23.932563 daemon_windows.go:160: [QMON] PID=36076 | QueryID=6 | Root=E:\ | Processed=2510 | Goroutines=21 | Alloc=5.79 MiB | Sys=201.84 MiB | NumGC=195 | IO(R/W)=83.42/0.03 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=0s | Cur=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\申报\画图\画纵深体系\重大项目-课题三（研究内容，岳）DRL(修改)-对研究内容1进行批注-请务必看批注.docx
+2026/01/24 14:17:24.544714 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.45 MiB | TotalAlloc=2.85 MiB | Sys=15.74 MiB | NumGC=1 | IO(R/W)=109.65/0.00 MiB | IO(R/W)=0.02/0.00 MiB/s
+2026/01/24 14:17:25.664965 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=1.15 MiB | TotalAlloc=1113.57 MiB | Sys=43.02 MiB | NumGC=616 | IO(R/W)=34.07/0.00 MiB | IO(R/W)=6.26/0.00 MiB/s
+2026/01/24 14:17:25.666049 daemon_windows.go:160: [QMON] PID=18468 | QueryID=6 | Root=C:\ | Processed=7106 | Goroutines=21 | Alloc=1.31 MiB | Sys=43.02 MiB | NumGC=616 | IO(R/W)=34.07/0.00 MiB | IO(R/W)=6.26/0.00 MiB/s | CurFor=0s | Cur=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\Microsoft\Web Tools Shared\Configs\assets\strings\plk\strings.json
+2026/01/24 14:17:25.758765 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=2.60 MiB | TotalAlloc=7263.60 MiB | Sys=63.05 MiB | NumGC=1938 | IO(R/W)=345.43/0.01 MiB | IO(R/W)=79.19/0.00 MiB/s
+2026/01/24 14:17:25.760451 daemon_windows.go:160: [QMON] PID=13756 | QueryID=6 | Root=D:\ | Processed=9285 | Goroutines=21 | Alloc=3.01 MiB | Sys=63.05 MiB | NumGC=1938 | IO(R/W)=345.45/0.01 MiB | IO(R/W)=79.11/0.00 MiB/s | CurFor=0s | Cur=D:\BaiduNetdiskWorkspace\Writings\Weekly\20250711-189\20250711-189.md
+2026/01/24 14:17:25.927055 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=1.24 MiB | TotalAlloc=3447.49 MiB | Sys=201.84 MiB | NumGC=776 | IO(R/W)=120.00/0.04 MiB | IO(R/W)=18.34/0.01 MiB/s
+2026/01/24 14:17:25.929694 daemon_windows.go:160: [QMON] PID=36076 | QueryID=6 | Root=E:\ | Processed=11610 | Goroutines=21 | Alloc=1.57 MiB | Sys=201.84 MiB | NumGC=776 | IO(R/W)=120.01/0.04 MiB | IO(R/W)=18.32/0.01 MiB/s | CurFor=0s | Cur=E:\Document-backup\Documents\LONH\000BnSec\Malware\SourceCode\busybotnet\banner.txt
+2026/01/24 14:17:26.538519 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.77 MiB | TotalAlloc=3.18 MiB | Sys=15.74 MiB | NumGC=1 | IO(R/W)=109.66/0.00 MiB | IO(R/W)=0.01/0.00 MiB/s
+2026/01/24 14:17:27.669958 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=2.23 MiB | TotalAlloc=1597.99 MiB | Sys=43.02 MiB | NumGC=851 | IO(R/W)=42.57/0.00 MiB | IO(R/W)=4.24/0.00 MiB/s
+2026/01/24 14:17:27.758823 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=7.11 MiB | TotalAlloc=8500.84 MiB | Sys=63.05 MiB | NumGC=2321 | IO(R/W)=399.21/0.01 MiB | IO(R/W)=26.89/0.00 MiB/s
+2026/01/24 14:17:27.929782 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=8.36 MiB | TotalAlloc=4451.84 MiB | Sys=201.84 MiB | NumGC=923 | IO(R/W)=152.52/0.05 MiB | IO(R/W)=16.24/0.00 MiB/s
+2026/01/24 14:17:28.543941 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.13 MiB | TotalAlloc=3.54 MiB | Sys=15.99 MiB | NumGC=1 | IO(R/W)=109.67/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:29.182530 daemon_windows.go:160: [QMON] PID=36076 | QueryID=10 | Root=E:\ | Processed=2712 | Goroutines=21 | Alloc=2.13 MiB | Sys=201.84 MiB | NumGC=1086 | IO(R/W)=202.94/0.06 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=0s | Cur=E:\Document-backup\Documents\LONH\000BnSec\Android\JEB-4.29.0.202304042205_by_CXV\doc\jeb-types.txt
+2026/01/24 14:17:29.183068 daemon_windows.go:160: [QMON] PID=13756 | QueryID=10 | Root=D:\ | Processed=4944 | Goroutines=21 | Alloc=7.37 MiB | Sys=63.05 MiB | NumGC=3122 | IO(R/W)=531.39/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=0s | Cur=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20210717.csv
+2026/01/24 14:17:29.183590 daemon_windows.go:160: [QMON] PID=18468 | QueryID=10 | Root=C:\ | Processed=4342 | Goroutines=21 | Alloc=7.86 MiB | Sys=43.02 MiB | NumGC=1130 | IO(R/W)=52.66/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=10ms | Cur=C:\Program Files\Git\usr\share\vim\vim91\lang\README.txt
+2026/01/24 14:17:29.666407 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=2.18 MiB | TotalAlloc=2075.95 MiB | Sys=43.02 MiB | NumGC=1172 | IO(R/W)=54.12/0.00 MiB | IO(R/W)=5.78/0.00 MiB/s
+2026/01/24 14:17:29.761079 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=9.51 MiB | TotalAlloc=12276.45 MiB | Sys=63.05 MiB | NumGC=3358 | IO(R/W)=574.30/0.01 MiB | IO(R/W)=87.44/0.00 MiB/s
+2026/01/24 14:17:29.927316 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=4.75 MiB | TotalAlloc=6332.18 MiB | Sys=201.84 MiB | NumGC=1396 | IO(R/W)=217.79/0.06 MiB | IO(R/W)=32.66/0.01 MiB/s
+2026/01/24 14:17:30.541631 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.36 MiB | TotalAlloc=3.77 MiB | Sys=15.99 MiB | NumGC=1 | IO(R/W)=109.68/0.01 MiB | IO(R/W)=0.01/0.00 MiB/s
+2026/01/24 14:17:31.182041 daemon_windows.go:160: [QMON] PID=13756 | QueryID=10 | Root=D:\ | Processed=9355 | Goroutines=21 | Alloc=1.33 MiB | Sys=71.18 MiB | NumGC=3994 | IO(R/W)=682.94/0.01 MiB | IO(R/W)=75.81/0.00 MiB/s | CurFor=0s | Cur=D:\BaiduNetdiskWorkspace\_AMG\DE_AFL_IOTJ\DE_AFL_Revising\DE_AFL_CCF_B_SCI\images\fuzzing_whole_path.pdf
+2026/01/24 14:17:31.183666 daemon_windows.go:160: [QMON] PID=18468 | QueryID=10 | Root=C:\ | Processed=7046 | Goroutines=21 | Alloc=1.44 MiB | Sys=47.09 MiB | NumGC=1421 | IO(R/W)=64.28/0.00 MiB | IO(R/W)=5.81/0.00 MiB/s | CurFor=0s | Cur=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\Microsoft\Copilot\Conversations.Service\Microsoft.VisualStudio.Copilot.SemanticContext.servicehub.service.json
+2026/01/24 14:17:31.183666 daemon_windows.go:160: [QMON] PID=36076 | QueryID=10 | Root=E:\ | Processed=11633 | Goroutines=21 | Alloc=1.27 MiB | Sys=201.84 MiB | NumGC=1639 | IO(R/W)=235.40/0.06 MiB | IO(R/W)=16.22/0.00 MiB/s | CurFor=50ms | Cur=E:\Document-backup\Documents\LONH\000BnSec\Malware\SourceCode\busybotnet\examples\bootfloppy\quickstart.txt
+2026/01/24 14:17:31.664888 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=8.81 MiB | TotalAlloc=2797.96 MiB | Sys=47.09 MiB | NumGC=1514 | IO(R/W)=68.07/0.00 MiB | IO(R/W)=6.98/0.00 MiB/s
+2026/01/24 14:17:31.765378 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=1.39 MiB | TotalAlloc=14692.85 MiB | Sys=71.18 MiB | NumGC=4024 | IO(R/W)=684.52/0.01 MiB | IO(R/W)=54.99/0.00 MiB/s
+2026/01/24 14:17:31.927138 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=2.50 MiB | TotalAlloc=7204.99 MiB | Sys=201.84 MiB | NumGC=1703 | IO(R/W)=240.66/0.06 MiB | IO(R/W)=11.44/0.00 MiB/s
+2026/01/24 14:17:32.547538 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.59 MiB | TotalAlloc=3.99 MiB | Sys=15.99 MiB | NumGC=1 | IO(R/W)=109.69/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:33.181815 daemon_windows.go:160: [QMON] PID=36076 | QueryID=10 | Root=E:\ | Processed=14437 | Goroutines=21 | Alloc=3.91 MiB | Sys=201.84 MiB | NumGC=1835 | IO(R/W)=254.96/0.06 MiB | IO(R/W)=9.79/0.00 MiB/s | CurFor=0s | Cur=E:\Document-backup\Documents\NJUPT\000学习\博一\上\数学模型\期末考试\第5题\1208.txt
+2026/01/24 14:17:33.183006 daemon_windows.go:160: [QMON] PID=13756 | QueryID=10 | Root=D:\ | Processed=11575 | Goroutines=21 | Alloc=8.36 MiB | Sys=136.26 MiB | NumGC=4309 | IO(R/W)=754.89/0.01 MiB | IO(R/W)=35.96/0.00 MiB/s | CurFor=0s | Cur=D:\BaiduNetdiskWorkspace\沙门\支撑工作\【VxWorks华科项目】2025年7月投标\commit\南邮技术偏离-售后-进度-验收-0713-lzb\南邮第一次打印。\装订版本\HPSCANS\扫描0024.pdf
+2026/01/24 14:17:33.191924 daemon_windows.go:160: [QMON] PID=18468 | QueryID=10 | Root=C:\ | Processed=9236 | Goroutines=21 | Alloc=1.78 MiB | Sys=47.09 MiB | NumGC=1680 | IO(R/W)=74.22/0.00 MiB | IO(R/W)=4.95/0.00 MiB/s | CurFor=10ms | Cur=C:\Program Files\WPS Office\12.1.0.21541\office6\addons\kpubaigcbox\res\taskpanedist\run.ini
+2026/01/24 14:17:33.666874 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=1.99 MiB | TotalAlloc=3189.17 MiB | Sys=47.09 MiB | NumGC=1717 | IO(R/W)=74.79/0.00 MiB | IO(R/W)=3.36/0.00 MiB/s
+2026/01/24 14:17:33.759690 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=6.86 MiB | TotalAlloc=16851.96 MiB | Sys=136.26 MiB | NumGC=4368 | IO(R/W)=763.53/0.01 MiB | IO(R/W)=39.62/0.00 MiB/s
+2026/01/24 14:17:33.928520 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=3.75 MiB | TotalAlloc=8542.10 MiB | Sys=201.84 MiB | NumGC=2293 | IO(R/W)=264.02/0.06 MiB | IO(R/W)=11.67/0.00 MiB/s
+2026/01/24 14:17:34.538990 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.49 MiB | TotalAlloc=4.60 MiB | Sys=16.05 MiB | NumGC=2 | IO(R/W)=109.71/0.01 MiB | IO(R/W)=0.01/0.00 MiB/s
+2026/01/24 14:17:35.182560 daemon_windows.go:160: [QMON] PID=13756 | QueryID=10 | Root=D:\ | Processed=18564 | Goroutines=21 | Alloc=4.02 MiB | Sys=136.26 MiB | NumGC=4783 | IO(R/W)=783.89/0.03 MiB | IO(R/W)=14.50/0.01 MiB/s | CurFor=0s | Cur=D:\Documents\LONH\000BnSec\GIE\API-Graph\APIGraph-master\src\res\API_docs_in_json\java.lang.IllegalStateException.json
+2026/01/24 14:17:35.184127 daemon_windows.go:160: [QMON] PID=18468 | QueryID=10 | Root=C:\ | Processed=10213 | Goroutines=21 | Alloc=2.14 MiB | Sys=47.09 MiB | NumGC=1761 | IO(R/W)=75.98/0.00 MiB | IO(R/W)=0.88/0.00 MiB/s | CurFor=0s | Cur=C:\Program Files\WPS Office\12.1.0.21915\office6\addons\kwebdevicecenter\run.ini
+2026/01/24 14:17:35.184127 daemon_windows.go:160: [QMON] PID=36076 | QueryID=10 | Root=E:\ | Processed=21263 | Goroutines=21 | Alloc=2.58 MiB | Sys=201.84 MiB | NumGC=2553 | IO(R/W)=269.92/0.06 MiB | IO(R/W)=7.47/0.00 MiB/s | CurFor=390ms | Cur=E:\Document-backup\Documents\Tencent Files\1037483569\nt_qq\nt_temp\AdminRegionConfig.txt
+2026/01/24 14:17:35.664740 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=4.81 MiB | TotalAlloc=3345.62 MiB | Sys=47.09 MiB | NumGC=1830 | IO(R/W)=77.62/0.00 MiB | IO(R/W)=1.41/0.00 MiB/s
+2026/01/24 14:17:35.766698 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=1.91 MiB | TotalAlloc=17853.11 MiB | Sys=136.26 MiB | NumGC=4971 | IO(R/W)=788.83/0.03 MiB | IO(R/W)=12.61/0.01 MiB/s
+2026/01/24 14:17:35.934828 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=3.08 MiB | TotalAlloc=9082.25 MiB | Sys=201.84 MiB | NumGC=2554 | IO(R/W)=269.92/0.06 MiB | IO(R/W)=2.94/0.00 MiB/s
+2026/01/24 14:17:36.548018 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.61 MiB | TotalAlloc=4.72 MiB | Sys=16.05 MiB | NumGC=2 | IO(R/W)=109.71/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:37.182319 daemon_windows.go:160: [QMON] PID=13756 | QueryID=10 | Root=D:\ | Processed=22464 | Goroutines=21 | Alloc=0.86 MiB | Sys=136.26 MiB | NumGC=5172 | IO(R/W)=807.27/0.03 MiB | IO(R/W)=11.69/0.00 MiB/s | CurFor=0s | Cur=D:\Documents\LONH\PDF电子书\《加密与解密（第4版）》PDF+光盘\PEDIY_BOOK4\chap12\18.AntiCallbackDllInject\readme.txt
+2026/01/24 14:17:37.187968 daemon_windows.go:160: [QMON] PID=36076 | QueryID=10 | Root=E:\ | Processed=21263 | Goroutines=21 | Alloc=3.66 MiB | Sys=201.84 MiB | NumGC=2556 | IO(R/W)=269.92/0.06 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=2.39s | Cur=E:\Document-backup\Documents\Tencent Files\1037483569\nt_qq\nt_temp\AdminRegionConfig.txt
+2026/01/24 14:17:37.191139 daemon_windows.go:160: [QMON] PID=18468 | QueryID=10 | Root=C:\ | Processed=14765 | Goroutines=21 | Alloc=2.27 MiB | Sys=47.09 MiB | NumGC=2124 | IO(R/W)=86.33/0.10 MiB | IO(R/W)=5.16/0.05 MiB/s | CurFor=10ms | Cur=C:\Program Files (x86)\Common Files\Schneider Electric Shared\Digital Signature Integrity Settings\Common\unifiedApplicationCerts.certs.xml
+2026/01/24 14:17:37.667890 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=3.42 MiB | TotalAlloc=3748.12 MiB | Sys=47.09 MiB | NumGC=2126 | IO(R/W)=86.35/0.10 MiB | IO(R/W)=4.36/0.05 MiB/s
+2026/01/24 14:17:37.758419 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=2.74 MiB | TotalAlloc=18788.73 MiB | Sys=136.26 MiB | NumGC=5269 | IO(R/W)=820.10/0.04 MiB | IO(R/W)=15.70/0.01 MiB/s
+2026/01/24 14:17:37.926880 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=2.50 MiB | TotalAlloc=9092.10 MiB | Sys=201.84 MiB | NumGC=2558 | IO(R/W)=269.92/0.06 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:38.541315 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.96 MiB | TotalAlloc=5.06 MiB | Sys=16.05 MiB | NumGC=2 | IO(R/W)=109.72/0.01 MiB | IO(R/W)=0.01/0.00 MiB/s
+2026/01/24 14:17:39.181710 daemon_windows.go:160: [QMON] PID=13756 | QueryID=10 | Root=D:\ | Processed=32036 | Goroutines=21 | Alloc=2.55 MiB | Sys=136.51 MiB | NumGC=6122 | IO(R/W)=846.69/0.04 MiB | IO(R/W)=19.71/0.01 MiB/s | CurFor=0s | Cur=D:\Documents\NJUPT\000学习\研一\下\密码分析学\密码学\研究生密码学\第13，14讲 基于身份的密码学和无证书密码学.ppt
+2026/01/24 14:17:39.182862 daemon_windows.go:160: [QMON] PID=18468 | QueryID=10 | Root=C:\ | Processed=15184 | Goroutines=21 | Alloc=2.41 MiB | Sys=47.09 MiB | NumGC=2164 | IO(R/W)=88.73/0.10 MiB | IO(R/W)=1.20/0.00 MiB/s | CurFor=0s | Cur=C:\Program Files (x86)\Kingsoft\WPS Office\12.1.0.23542\office6\addons\kwebsuwellaidocument\run.ini
+2026/01/24 14:17:39.184990 daemon_windows.go:160: [QMON] PID=36076 | QueryID=10 | Root=E:\ | Processed=21263 | Goroutines=21 | Alloc=1.61 MiB | Sys=201.84 MiB | NumGC=2560 | IO(R/W)=269.92/0.06 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=4.39s | Cur=E:\Document-backup\Documents\Tencent Files\1037483569\nt_qq\nt_temp\AdminRegionConfig.txt
+2026/01/24 14:17:39.665263 main.go:64: [MONITOR] PID=18468 | Goroutines=21 | Alloc=2.21 MiB | TotalAlloc=3929.15 MiB | Sys=47.09 MiB | NumGC=2248 | IO(R/W)=90.51/0.10 MiB | IO(R/W)=2.08/0.00 MiB/s
+2026/01/24 14:17:39.768041 main.go:64: [MONITOR] PID=13756 | Goroutines=21 | Alloc=2.58 MiB | TotalAlloc=20596.69 MiB | Sys=136.51 MiB | NumGC=6143 | IO(R/W)=847.72/0.04 MiB | IO(R/W)=13.74/0.00 MiB/s
+2026/01/24 14:17:39.935775 main.go:64: [MONITOR] PID=36076 | Goroutines=21 | Alloc=3.36 MiB | TotalAlloc=9100.85 MiB | Sys=201.84 MiB | NumGC=2561 | IO(R/W)=269.92/0.07 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:40.544854 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.12 MiB | TotalAlloc=5.23 MiB | Sys=16.05 MiB | NumGC=2 | IO(R/W)=109.73/0.01 MiB | IO(R/W)=0.01/0.00 MiB/s
+2026/01/24 14:17:41.185967 daemon_windows.go:160: [QMON] PID=36076 | QueryID=10 | Root=E:\ | Processed=21263 | Goroutines=21 | Alloc=1.49 MiB | Sys=201.84 MiB | NumGC=2565 | IO(R/W)=269.92/0.07 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=6.39s | Cur=E:\Document-backup\Documents\Tencent Files\1037483569\nt_qq\nt_temp\AdminRegionConfig.txt
+2026/01/24 14:17:41.185967 daemon_windows.go:160: [QMON] PID=13756 | QueryID=10 | Root=D:\ | Processed=32287 | Goroutines=21 | Alloc=1.37 MiB | Sys=136.51 MiB | NumGC=6148 | IO(R/W)=847.72/0.04 MiB | IO(R/W)=0.51/0.00 MiB/s | CurFor=1.91s | Cur=D:\Documents\Tencent Files\1037483569\nt_qq\nt_temp\AdminRegionConfig.txt
+2026/01/24 14:17:41.185967 daemon_windows.go:160: [QMON] PID=18468 | QueryID=10 | Root=C:\ | Processed=17507 | Goroutines=21 | Alloc=1.33 MiB | Sys=47.09 MiB | NumGC=2433 | IO(R/W)=95.71/0.10 MiB | IO(R/W)=3.48/0.00 MiB/s | CurFor=10ms | Cur=C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\VCWizards\AppWiz\MFC\Library\templates\2052\readme.txt
+2026/01/24 14:17:41.677979 main.go:64: [MONITOR] PID=18468 | Goroutines=2 | Alloc=1.92 MiB | TotalAlloc=4277.35 MiB | Sys=47.09 MiB | NumGC=2433 | IO(R/W)=95.71/0.10 MiB | IO(R/W)=2.58/0.00 MiB/s
+2026/01/24 14:17:41.771415 main.go:64: [MONITOR] PID=13756 | Goroutines=2 | Alloc=1.76 MiB | TotalAlloc=20608.98 MiB | Sys=136.51 MiB | NumGC=6148 | IO(R/W)=847.72/0.04 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:41.927447 main.go:64: [MONITOR] PID=36076 | Goroutines=2 | Alloc=1.82 MiB | TotalAlloc=9110.00 MiB | Sys=201.84 MiB | NumGC=2565 | IO(R/W)=269.92/0.07 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:42.552427 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.46 MiB | TotalAlloc=5.57 MiB | Sys=16.05 MiB | NumGC=2 | IO(R/W)=109.73/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:43.667271 main.go:64: [MONITOR] PID=18468 | Goroutines=2 | Alloc=1.92 MiB | TotalAlloc=4277.35 MiB | Sys=47.09 MiB | NumGC=2433 | IO(R/W)=95.71/0.10 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:43.759578 main.go:64: [MONITOR] PID=13756 | Goroutines=2 | Alloc=1.76 MiB | TotalAlloc=20608.99 MiB | Sys=136.51 MiB | NumGC=6148 | IO(R/W)=847.72/0.04 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:43.930194 main.go:64: [MONITOR] PID=36076 | Goroutines=2 | Alloc=1.82 MiB | TotalAlloc=9110.00 MiB | Sys=201.84 MiB | NumGC=2565 | IO(R/W)=269.92/0.07 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:44.539856 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.61 MiB | TotalAlloc=5.72 MiB | Sys=16.05 MiB | NumGC=2 | IO(R/W)=109.74/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:45.676844 main.go:64: [MONITOR] PID=18468 | Goroutines=2 | Alloc=1.92 MiB | TotalAlloc=4277.35 MiB | Sys=47.09 MiB | NumGC=2433 | IO(R/W)=95.71/0.10 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:45.770189 main.go:64: [MONITOR] PID=13756 | Goroutines=2 | Alloc=1.76 MiB | TotalAlloc=20608.99 MiB | Sys=136.51 MiB | NumGC=6148 | IO(R/W)=847.72/0.04 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:45.927502 main.go:64: [MONITOR] PID=36076 | Goroutines=2 | Alloc=1.82 MiB | TotalAlloc=9110.00 MiB | Sys=201.84 MiB | NumGC=2565 | IO(R/W)=269.92/0.07 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:46.549236 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.68 MiB | TotalAlloc=5.79 MiB | Sys=16.05 MiB | NumGC=2 | IO(R/W)=109.74/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:48.544249 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.64 MiB | TotalAlloc=6.47 MiB | Sys=16.05 MiB | NumGC=3 | IO(R/W)=187.84/0.01 MiB | IO(R/W)=39.15/0.00 MiB/s
+2026/01/24 14:17:49.166506 daemon_windows.go:160: [QMON] PID=9476 | QueryID=13 | Root=C:\ | Processed=4145 | Goroutines=21 | Alloc=1.98 MiB | Sys=38.64 MiB | NumGC=275 | IO(R/W)=18.39/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=30ms | Cur=C:\Program Files\Git\mingw64\share\licenses\pcre2\LICENCE.md
+2026/01/24 14:17:49.166506 main.go:64: [MONITOR] PID=9476 | Goroutines=21 | Alloc=1.99 MiB | TotalAlloc=367.77 MiB | Sys=38.64 MiB | NumGC=275 | IO(R/W)=18.39/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:49.188921 main.go:64: [MONITOR] PID=31884 | Goroutines=21 | Alloc=8.91 MiB | TotalAlloc=3280.32 MiB | Sys=63.05 MiB | NumGC=882 | IO(R/W)=161.10/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:49.190880 daemon_windows.go:160: [QMON] PID=31884 | QueryID=13 | Root=D:\ | Processed=4099 | Goroutines=21 | Alloc=7.37 MiB | Sys=63.05 MiB | NumGC=883 | IO(R/W)=161.23/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=0s | Cur=D:\BaiduNetdiskWorkspace\Local\okx_api\candlestick_data_2020_2025\daily\ETH_USDT\ETH_USDT_1m_20241229.csv
+2026/01/24 14:17:49.412901 daemon_windows.go:160: [QMON] PID=27732 | QueryID=13 | Root=E:\ | Processed=1571 | Goroutines=21 | Alloc=684.63 MiB | Sys=925.87 MiB | NumGC=117 | IO(R/W)=56.77/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=40ms | Cur=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.1_PS_x86_reward_summary.csv
+2026/01/24 14:17:49.414992 main.go:64: [MONITOR] PID=27732 | Goroutines=21 | Alloc=684.62 MiB | TotalAlloc=2620.20 MiB | Sys=925.87 MiB | NumGC=117 | IO(R/W)=56.77/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:49.425625 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=287.17 MiB | Alloc=754.97 MiB | Sys=925.87 MiB | Size=12499058 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.1\arm_mal_info.csv
+2026/01/24 14:17:49.756573 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=270.23 MiB | Alloc=837.58 MiB | Sys=1056.04 MiB | Size=18930322 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.6_kaspersky_MS_x64_reward_summary.csv
+2026/01/24 14:17:49.426137 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=286.39 MiB | Alloc=756.90 MiB | Sys=925.87 MiB | Size=8692682 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.1\x86_mal_info.csv
+2026/01/24 14:17:49.549812 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=423.43 MiB | Alloc=916.43 MiB | Sys=1056.04 MiB | Size=64102147 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\arm_reward_total_summary.csv
+2026/01/24 14:17:49.788493 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=296.53 MiB | Alloc=916.96 MiB | Sys=1056.04 MiB | Size=8473506 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.7_kaspersky_PS_x64_reward_summary_冲突文件_root_20241115102528.csv
+2026/01/24 14:17:49.779006 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=290.32 MiB | Alloc=899.57 MiB | Sys=1056.04 MiB | Size=7204424 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.6_kaspersky_MS_x86_reward_summary.csv
+2026/01/24 14:17:49.755032 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=278.68 MiB | Alloc=830.47 MiB | Sys=1056.04 MiB | Size=9563145 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.5_acc_asr_2024_x86_reward_summary.csv
+2026/01/24 14:17:49.564000 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=480.21 MiB | Alloc=944.80 MiB | Sys=1056.04 MiB | Size=10724230 | Ext=.xlsx | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version3\实验表格_v3.xlsx
+2026/01/24 14:17:49.756051 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=273.69 MiB | Alloc=833.81 MiB | Sys=1056.04 MiB | Size=8519572 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.6_kaspersky_MS_arm_reward_summary.csv
+2026/01/24 14:17:49.782245 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=278.47 MiB | Alloc=906.50 MiB | Sys=1056.04 MiB | Size=54438101 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.8_ClamAV_MS_x64_reward_summary.csv
+2026/01/24 14:17:49.808770 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=310.39 MiB | Alloc=936.77 MiB | Sys=1056.04 MiB | Size=6803870 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2.8_ClamAV_MS_arm_reward_summary.csv
+2026/01/24 14:17:49.992818 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=290.16 MiB | Alloc=1147.41 MiB | Sys=1259.42 MiB | Size=183676369 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\x64_reward_total_summary.csv
+2026/01/24 14:17:50.003408 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=311.33 MiB | Alloc=1150.19 MiB | Sys=1259.42 MiB | Size=10429987 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2_MS_x86_reward_summary.csv
+2026/01/24 14:17:50.003965 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=311.35 MiB | Alloc=1150.20 MiB | Sys=1259.42 MiB | Size=8131424 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\_AMG\SP25\version4\4.2\csv_log\v4.2_MS_arm_reward_summary.csv
+2026/01/24 14:17:50.546829 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.05 MiB | TotalAlloc=6.88 MiB | Sys=16.05 MiB | NumGC=3 | IO(R/W)=187.85/0.01 MiB | IO(R/W)=0.01/0.00 MiB/s
+2026/01/24 14:17:50.974348 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.91 MiB | Alloc=1249.27 MiB | Sys=1967.17 MiB | Size=17775345 | Ext=.pptx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\2022-12-16.pptx
+2026/01/24 14:17:51.021390 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.77 MiB | Alloc=1249.33 MiB | Sys=1967.17 MiB | Size=104491 | Ext=.pptx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\PPT模板2.pptx
+2026/01/24 14:17:51.030308 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.65 MiB | Alloc=1249.33 MiB | Sys=1967.17 MiB | Size=2287914 | Ext=.pdf | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\从内生安全到新型电力系统.pdf
+2026/01/24 14:17:51.035222 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.73 MiB | Alloc=1249.60 MiB | Sys=1967.17 MiB | Size=4426942 | Ext=.pptx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\阶段性工作汇报-2023-09-02.pptx
+2026/01/24 14:17:51.035222 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.95 MiB | Alloc=1249.65 MiB | Sys=1967.17 MiB | Size=4270550 | Ext=.pptx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\宁波-汇报PPT\控制需求驱动的新型电力系统的数据安全传输.pptx
+2026/01/24 14:17:51.035222 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=310.10 MiB | Alloc=1249.65 MiB | Sys=1967.17 MiB | Size=335839 | Ext=.docx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\CX创新计划\科研CX10293南京邮电大学0839网络空间安全-学博常舒予.docx
+2026/01/24 14:17:51.035222 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.86 MiB | Alloc=1249.65 MiB | Sys=1967.17 MiB | Size=7345856 | Ext=.pptx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\研究生阶段工作计划与进度汇报-2023-03-10.pptx
+2026/01/24 14:17:51.036729 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.46 MiB | Alloc=1249.68 MiB | Sys=1967.17 MiB | Size=7741400 | Ext=.pptx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\阶段性工作汇报-2025-02-23.pptx
+2026/01/24 14:17:51.036729 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.80 MiB | Alloc=1249.68 MiB | Sys=1967.17 MiB | Size=13504150 | Ext=.pptx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【组会PPT】组会汇报\阶段性工作汇报-2024-01-07.pptx
+2026/01/24 14:17:51.159857 daemon_windows.go:160: [QMON] PID=9476 | QueryID=13 | Root=C:\ | Processed=6348 | Goroutines=21 | Alloc=1.45 MiB | Sys=38.89 MiB | NumGC=545 | IO(R/W)=30.86/0.00 MiB | IO(R/W)=6.25/0.00 MiB/s | CurFor=0s | Cur=C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow\catalog.json
+2026/01/24 14:17:51.159857 main.go:64: [MONITOR] PID=9476 | Goroutines=21 | Alloc=1.46 MiB | TotalAlloc=963.97 MiB | Sys=38.89 MiB | NumGC=545 | IO(R/W)=30.86/0.00 MiB | IO(R/W)=6.25/0.00 MiB/s
+2026/01/24 14:17:51.160548 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=314.23 MiB | Alloc=1582.44 MiB | Sys=2284.51 MiB | Size=863641 | Ext=.pdf | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\hhp\画纵深体系\研究内容1的参考文件资料\研究内容1的文件资料\零信任模型\基于多智能体一致性算法的微电网分布式分层控制策略_周烨.pdf
+2026/01/24 14:17:51.195527 main.go:64: [MONITOR] PID=31884 | Goroutines=21 | Alloc=23.57 MiB | TotalAlloc=7072.19 MiB | Sys=108.04 MiB | NumGC=1753 | IO(R/W)=336.75/0.00 MiB | IO(R/W)=87.57/0.00 MiB/s
+2026/01/24 14:17:51.195527 daemon_windows.go:160: [QMON] PID=31884 | QueryID=13 | Root=D:\ | Processed=8721 | Goroutines=21 | Alloc=23.61 MiB | Sys=108.04 MiB | NumGC=1753 | IO(R/W)=336.82/0.00 MiB | IO(R/W)=87.59/0.00 MiB/s | CurFor=0s | Cur=D:\BaiduNetdiskWorkspace\Paper-PDF\retrieval_script\EI\EI_LLM\EI_dataset_dl_1\LLM_Sandbox_2023_2025_detailed_2-7-2025_12949964.csv
+2026/01/24 14:17:51.450472 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=312.20 MiB | Alloc=1582.44 MiB | Sys=2284.51 MiB | Size=775127 | Ext=.docx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\hhp\画纵深体系\重大项目-课题三（研究内容，岳）DRL(修改)-对研究内容1进行批注-请务必看批注.docx
+2026/01/24 14:17:51.450472 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=311.81 MiB | Alloc=1582.44 MiB | Sys=2284.51 MiB | Size=207401 | Ext=.docx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\hhp\纵深配图文字描述.docx
+2026/01/24 14:17:51.456251 main.go:64: [MONITOR] PID=27732 | Goroutines=21 | Alloc=1589.81 MiB | TotalAlloc=5127.17 MiB | Sys=2284.51 MiB | NumGC=120 | IO(R/W)=84.37/0.03 MiB | IO(R/W)=13.51/0.01 MiB/s
+2026/01/24 14:17:51.443623 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=311.43 MiB | Alloc=1583.07 MiB | Sys=2284.51 MiB | Size=14467528 | Ext=.docx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\hhp\重大项目-课题四-要写成这个样子（参考模板）.docx
+2026/01/24 14:17:51.443623 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=309.62 MiB | Alloc=1583.07 MiB | Sys=2284.51 MiB | Size=1037472 | Ext=.pdf | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\hhp\重大项目指南建议(2021版本)_最终版.pdf
+2026/01/24 14:17:51.455215 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=311.61 MiB | Alloc=1582.44 MiB | Sys=2284.51 MiB | Size=436542 | Ext=.docx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\hhp\课题三.docx
+2026/01/24 14:17:51.461481 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=333.35 MiB | Alloc=1591.39 MiB | Sys=2284.51 MiB | Size=7327712 | Ext=.csv | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\数据集\P221.csv
+2026/01/24 14:17:51.455721 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=311.58 MiB | Alloc=1582.44 MiB | Sys=2284.51 MiB | Size=769170 | Ext=.docx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\hhp\重大项目-课题三（研究内容，岳）DRL(修改).docx
+2026/01/24 14:17:51.456251 daemon_windows.go:160: [QMON] PID=27732 | QueryID=13 | Root=E:\ | Processed=2494 | Goroutines=21 | Alloc=1589.82 MiB | Sys=2284.51 MiB | NumGC=120 | IO(R/W)=84.37/0.03 MiB | IO(R/W)=13.51/0.01 MiB/s | CurFor=0s | Cur=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\新型电力系统-研一\申报\画图\内容1-hhp发送.docx
+2026/01/24 14:17:51.559732 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=13 | Delta=349.82 MiB | Alloc=1607.58 MiB | Sys=2284.51 MiB | Size=13012105 | Ext=.xlsx | Path=E:\Document-backup\BaiduNetdiskWorkspace\黄门\课题工作\【项目2022】新型电力系统\数据集\OR100K.xlsx
+2026/01/24 14:17:52.545941 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.78 MiB | TotalAlloc=7.61 MiB | Sys=16.05 MiB | NumGC=3 | IO(R/W)=187.87/0.01 MiB | IO(R/W)=0.01/0.00 MiB/s
+2026/01/24 14:17:52.646243 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=17 | Delta=870.47 MiB | Alloc=2349.11 MiB | Sys=3171.56 MiB | Size=9607273 | Ext=.log | Path=E:\360RecycleBin\2039\577240cd304033334374901f41e3e7a2.log
+2026/01/24 14:17:52.648908 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=17 | Delta=707.42 MiB | Alloc=2182.45 MiB | Sys=3171.62 MiB | Size=11732763 | Ext=.log | Path=E:\360RecycleBin\2039\55f1573be1d1572aaf4f47bea8994114.log
+2026/01/24 14:17:52.653776 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=17 | Delta=731.90 MiB | Alloc=2204.00 MiB | Sys=3171.62 MiB | Size=6806650 | Ext=.log | Path=E:\360RecycleBin\2039\4d15f2310df2d7a405d29dc7ec2cc17a.log
+2026/01/24 14:17:52.655551 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=17 | Delta=675.99 MiB | Alloc=2213.91 MiB | Sys=3171.62 MiB | Size=13098330 | Ext=.log | Path=E:\360RecycleBin\2039\d05275b5e32d929cf80babdf9525cc55.log
+2026/01/24 14:17:53.151930 main.go:64: [MONITOR] PID=9476 | Goroutines=21 | Alloc=1.56 MiB | TotalAlloc=1221.34 MiB | Sys=42.96 MiB | NumGC=705 | IO(R/W)=35.99/0.00 MiB | IO(R/W)=2.58/0.00 MiB/s
+2026/01/24 14:17:53.318927 main.go:64: [MONITOR] PID=31884 | Goroutines=24 | Alloc=1423.57 MiB | TotalAlloc=11220.93 MiB | Sys=1926.78 MiB | NumGC=1769 | IO(R/W)=385.90/0.01 MiB | IO(R/W)=23.14/0.00 MiB/s
+2026/01/24 14:17:53.679617 main.go:64: [MONITOR] PID=27732 | Goroutines=24 | Alloc=3525.08 MiB | TotalAlloc=8865.22 MiB | Sys=4400.03 MiB | NumGC=123 | IO(R/W)=109.94/0.04 MiB | IO(R/W)=11.50/0.00 MiB/s
+2026/01/24 14:17:54.000343 daemon_windows.go:160: [QMON] PID=9476 | QueryID=17 | Root=C:\ | Processed=3701 | Goroutines=21 | Alloc=0.79 MiB | Sys=42.96 MiB | NumGC=851 | IO(R/W)=38.71/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=0s | Cur=C:\Program Files\Clash Verge\Microsoft.WebView2.FixedVersionRuntime.109.0.1518.78.x64\WidevineCdm\manifest.json
+2026/01/24 14:17:54.049201 daemon_windows.go:160: [QMON] PID=27732 | QueryID=17 | Root=E:\ | Processed=913 | Goroutines=24 | Alloc=2981.11 MiB | Sys=5168.81 MiB | NumGC=123 | IO(R/W)=110.59/0.04 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=230ms | Cur=E:\Document-backup\BaiduNetdiskWorkspace\Local\Winbypass\“银狐”系列变种木马-火绒发布-2024.11.11.pdf
+2026/01/24 14:17:54.116464 daemon_windows.go:160: [QMON] PID=31884 | QueryID=17 | Root=D:\ | Processed=3175 | Goroutines=24 | Alloc=3763.86 MiB | Sys=3850.84 MiB | NumGC=1770 | IO(R/W)=462.60/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s | CurFor=90ms | Cur=D:\BaiduNetdiskWorkspace\Local\okx_api\candlestick_data_2020_2025\daily\ETH_USDT\ETH_USDT_1m_20220619.csv
+2026/01/24 14:17:54.336162 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=17 | Delta=808.58 MiB | Alloc=4239.98 MiB | Sys=5937.58 MiB | Size=1663619 | Ext=.pdf | Path=E:\Document-backup\BaiduNetdiskWorkspace\Paper-Read\中国计算机学会推荐国际学术会议和期刊目录-2022更名版.pdf
+2026/01/24 14:17:54.540657 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.78 MiB | TotalAlloc=7.61 MiB | Sys=16.05 MiB | NumGC=3 | IO(R/W)=187.87/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:55.116586 daemon_windows.go:282: [MEMSPIKE] PID=27732 | QueryID=17 | Delta=805.66 MiB | Alloc=4244.41 MiB | Sys=5937.58 MiB | Size=484845 | Ext=.pdf | Path=E:\Document-backup\BaiduNetdiskWorkspace\Paper-Read\南邮博士研究生毕业要求.pdf
+2026/01/24 14:17:55.158021 main.go:64: [MONITOR] PID=9476 | Goroutines=21 | Alloc=1.13 MiB | TotalAlloc=1486.27 MiB | Sys=42.96 MiB | NumGC=905 | IO(R/W)=41.97/0.00 MiB | IO(R/W)=2.98/0.00 MiB/s
+2026/01/24 14:17:55.376550 main.go:64: [MONITOR] PID=27732 | Goroutines=24 | Alloc=2452.63 MiB | TotalAlloc=11198.73 MiB | Sys=5937.58 MiB | NumGC=124 | IO(R/W)=126.02/0.04 MiB | IO(R/W)=9.48/0.00 MiB/s
+2026/01/24 14:17:55.650645 main.go:64: [MONITOR] PID=31884 | Goroutines=24 | Alloc=3695.86 MiB | TotalAlloc=17056.99 MiB | Sys=5544.77 MiB | NumGC=1772 | IO(R/W)=519.21/0.01 MiB | IO(R/W)=57.18/0.00 MiB/s
+2026/01/24 14:17:56.009857 daemon_windows.go:160: [QMON] PID=9476 | QueryID=17 | Root=C:\ | Processed=4579 | Goroutines=21 | Alloc=1.26 MiB | Sys=42.96 MiB | NumGC=952 | IO(R/W)=45.81/0.00 MiB | IO(R/W)=3.53/0.00 MiB/s | CurFor=170ms | Cur=C:\Program Files\IDA Professional 9.2\docs\user-guide\disassembler\packed-executables\unpacking.pdf
+2026/01/24 14:17:56.074085 daemon_windows.go:160: [QMON] PID=31884 | QueryID=17 | Root=D:\ | Processed=5302 | Goroutines=24 | Alloc=3704.98 MiB | Sys=6314.42 MiB | NumGC=1772 | IO(R/W)=543.75/0.01 MiB | IO(R/W)=41.91/0.00 MiB/s | CurFor=30ms | Cur=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20220710.csv
+2026/01/24 14:17:56.547015 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.83 MiB | TotalAlloc=7.65 MiB | Sys=16.05 MiB | NumGC=3 | IO(R/W)=187.87/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:56.924674 daemon_windows.go:160: [QMON] PID=27732 | QueryID=17 | Root=E:\ | Processed=1356 | Goroutines=24 | Alloc=5204.97 MiB | Sys=6897.53 MiB | NumGC=124 | IO(R/W)=126.81/0.04 MiB | IO(R/W)=5.64/0.00 MiB/s | CurFor=1s | Cur=E:\Document-backup\BaiduNetdiskWorkspace\Writings\Weekly\20230922-95\20230922-95.md
+2026/01/24 14:17:57.151513 main.go:64: [MONITOR] PID=9476 | Goroutines=21 | Alloc=1.71 MiB | TotalAlloc=1867.33 MiB | Sys=42.96 MiB | NumGC=1060 | IO(R/W)=49.24/0.00 MiB | IO(R/W)=3.65/0.00 MiB/s
+2026/01/24 14:17:57.399361 main.go:64: [MONITOR] PID=27732 | Goroutines=8 | Alloc=3413.14 MiB | TotalAlloc=14474.68 MiB | Sys=6897.53 MiB | NumGC=125 | IO(R/W)=127.19/0.04 MiB | IO(R/W)=0.58/0.00 MiB/s
+2026/01/24 14:17:58.226654 main.go:64: [MONITOR] PID=31884 | Goroutines=24 | Alloc=4841.82 MiB | TotalAlloc=21804.13 MiB | Sys=7274.37 MiB | NumGC=1773 | IO(R/W)=583.23/0.01 MiB | IO(R/W)=24.85/0.00 MiB/s
+2026/01/24 14:17:58.325526 daemon_windows.go:160: [QMON] PID=31884 | QueryID=17 | Root=D:\ | Processed=6313 | Goroutines=24 | Alloc=4842.19 MiB | Sys=7274.37 MiB | NumGC=1773 | IO(R/W)=583.36/0.01 MiB | IO(R/W)=17.43/0.00 MiB/s | CurFor=1.13s | Cur=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250416.csv
+2026/01/24 14:17:58.386818 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.2s | Size=144769 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250409.csv | Match=0
+2026/01/24 14:17:58.386818 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.2s | Size=143322 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250401.csv | Match=0
+2026/01/24 14:17:58.393066 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.21s | Size=144092 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250408.csv | Match=0
+2026/01/24 14:17:58.392065 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.21s | Size=143417 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250402.csv | Match=0
+2026/01/24 14:17:58.392065 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.2s | Size=143110 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250413.csv | Match=0
+2026/01/24 14:17:58.440178 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.25s | Size=143371 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250412.csv | Match=0
+2026/01/24 14:17:58.395066 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.21s | Size=145639 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250407.csv | Match=0
+2026/01/24 14:17:58.390065 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.2s | Size=142848 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250405.csv | Match=0
+2026/01/24 14:17:58.394066 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.2s | Size=144682 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250410.csv | Match=0
+2026/01/24 14:17:58.399644 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.21s | Size=143605 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250414.csv | Match=0
+2026/01/24 14:17:58.394066 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.21s | Size=144400 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250403.csv | Match=0
+2026/01/24 14:17:58.393066 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.21s | Size=141919 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250406.csv | Match=0
+2026/01/24 14:17:58.393066 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.21s | Size=144213 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250404.csv | Match=0
+2026/01/24 14:17:58.416644 daemon_windows.go:349: [SLOW] PID=31884 | QueryID=17 | Elapsed=1.22s | Size=144202 | Ext=.csv | Path=D:\BaiduNetdiskWorkspace\Local\okx_api\download_from_okx\candlestick_data_2020_2025\daily\BTC_USDT\BTC_USDT_1m_20250411.csv | Match=0
+2026/01/24 14:17:58.550677 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.92 MiB | TotalAlloc=7.75 MiB | Sys=16.05 MiB | NumGC=3 | IO(R/W)=187.87/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:59.160742 main.go:64: [MONITOR] PID=9476 | Goroutines=2 | Alloc=2.41 MiB | TotalAlloc=1882.97 MiB | Sys=42.96 MiB | NumGC=1067 | IO(R/W)=49.51/0.00 MiB | IO(R/W)=0.13/0.00 MiB/s
+2026/01/24 14:17:59.395131 main.go:64: [MONITOR] PID=27732 | Goroutines=8 | Alloc=3850.44 MiB | TotalAlloc=18521.53 MiB | Sys=8097.47 MiB | NumGC=126 | IO(R/W)=127.19/0.04 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:17:59.578826 main.go:64: [MONITOR] PID=31884 | Goroutines=5 | Alloc=5009.43 MiB | TotalAlloc=24176.07 MiB | Sys=9674.25 MiB | NumGC=1774 | IO(R/W)=584.10/0.01 MiB | IO(R/W)=0.64/0.00 MiB/s
+2026/01/24 14:18:00.540417 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=3.09 MiB | TotalAlloc=7.92 MiB | Sys=16.05 MiB | NumGC=3 | IO(R/W)=187.87/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:01.158433 main.go:64: [MONITOR] PID=9476 | Goroutines=2 | Alloc=2.42 MiB | TotalAlloc=1882.97 MiB | Sys=42.96 MiB | NumGC=1067 | IO(R/W)=49.51/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:02.552128 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.66 MiB | TotalAlloc=8.32 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=239.94/0.01 MiB | IO(R/W)=25.88/0.00 MiB/s
+2026/01/24 14:18:04.552052 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.96 MiB | TotalAlloc=8.62 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=265.97/0.01 MiB | IO(R/W)=13.02/0.00 MiB/s
+2026/01/24 14:18:04.797916 main.go:64: [MONITOR] PID=29904 | Goroutines=2 | Alloc=0.52 MiB | TotalAlloc=0.52 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:04.982400 main.go:64: [MONITOR] PID=13600 | Goroutines=2 | Alloc=0.52 MiB | TotalAlloc=0.52 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:05.043180 main.go:64: [MONITOR] PID=29016 | Goroutines=2 | Alloc=0.52 MiB | TotalAlloc=0.52 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:06.549695 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=1.96 MiB | TotalAlloc=8.62 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=265.97/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:06.798723 main.go:64: [MONITOR] PID=29904 | Goroutines=2 | Alloc=0.57 MiB | TotalAlloc=0.57 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:06.988833 main.go:64: [MONITOR] PID=13600 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:07.035827 main.go:64: [MONITOR] PID=29016 | Goroutines=2 | Alloc=0.57 MiB | TotalAlloc=0.57 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:08.542902 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.18 MiB | TotalAlloc=8.84 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=265.97/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:08.792902 main.go:64: [MONITOR] PID=29904 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:08.993692 main.go:64: [MONITOR] PID=13600 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:09.039870 main.go:64: [MONITOR] PID=29016 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:10.544783 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.55 MiB | TotalAlloc=9.21 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=265.97/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:10.792566 main.go:64: [MONITOR] PID=29904 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:10.980358 main.go:64: [MONITOR] PID=13600 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:11.041873 main.go:64: [MONITOR] PID=29016 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:12.552425 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.55 MiB | TotalAlloc=9.21 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=265.97/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:12.786098 main.go:64: [MONITOR] PID=29904 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:12.985940 main.go:64: [MONITOR] PID=13600 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:13.032545 main.go:64: [MONITOR] PID=29016 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:14.546205 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.57 MiB | TotalAlloc=9.23 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=265.97/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:14.794285 main.go:64: [MONITOR] PID=29904 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:14.982261 main.go:64: [MONITOR] PID=13600 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:15.044506 main.go:64: [MONITOR] PID=29016 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.61/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:16.553017 main.go:64: [MONITOR] PID=15580 | Goroutines=7 | Alloc=2.62 MiB | TotalAlloc=9.28 MiB | Sys=16.55 MiB | NumGC=4 | IO(R/W)=265.97/0.01 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:16.798643 main.go:64: [MONITOR] PID=29904 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.62/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:16.984641 main.go:64: [MONITOR] PID=13600 | Goroutines=2 | Alloc=0.59 MiB | TotalAlloc=0.59 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.62/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s
+2026/01/24 14:18:17.030767 main.go:64: [MONITOR] PID=29016 | Goroutines=2 | Alloc=0.58 MiB | TotalAlloc=0.58 MiB | Sys=10.61 MiB | NumGC=0 | IO(R/W)=10.62/0.00 MiB | IO(R/W)=0.00/0.00 MiB/s

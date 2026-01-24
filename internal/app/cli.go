@@ -56,6 +56,12 @@ func RunCLI(opts CLIOptions) error {
 	}
 	fmt.Println("Searching (daemon-backed, cached)...")
 
+	enablePureGoPDF := false
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("OFIND_PDF_PUREGO"))) {
+	case "1", "true", "yes", "y", "on":
+		enablePureGoPDF = true
+	}
+
 	outCh := make(chan daemonOut, 1024)
 	procMu := sync.Mutex{}
 	procs := make([]*daemonProcess, 0, len(roots))
@@ -69,7 +75,7 @@ func RunCLI(opts CLIOptions) error {
 
 	doneNeed := 0
 	for _, root := range roots {
-		dproc, err := startDaemonProcess(exePath, root, opts.Workers, func(out daemonOut) {
+		dproc, err := startDaemonProcess(exePath, root, opts.Workers, enablePureGoPDF, func(out daemonOut) {
 			select {
 			case outCh <- out:
 			default:

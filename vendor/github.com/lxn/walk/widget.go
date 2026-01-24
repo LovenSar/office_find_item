@@ -134,8 +134,8 @@ func (wb *WidgetBase) init(widget Widget) error {
 	if err != nil {
 		return err
 	}
-	// 某些环境/系统上 tooltip 控件可能无法为所有窗口注册（TTM_ADDTOOL failed）。
-	// ToolTip 只是增强功能，注册失败时忽略，避免整个程序退出。
+	// Tooltip is an enhancement. Some systems/environments may fail to register
+	// (TTM_ADDTOOL failed). Ignore to avoid crashing the whole app.
 	_ = tt.AddTool(wb.window.(Widget))
 
 	wb.toolTipTextProperty = NewProperty(

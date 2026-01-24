@@ -1,7 +1,11 @@
 package extract
 
+import (
+	"strings"
+	"unicode/utf8"
+)
+
 // FindSnippets finds up to maxSnippets matches of query in text and returns context snippets.
-// It works on rune slices to support Unicode correctly.
 // Each snippet highlights the matched occurrence by wrapping it with 【】.
 func FindSnippets(text string, query string, contextLen int, maxSnippets int) []string {
 	if maxSnippets <= 0 {
@@ -10,61 +14,80 @@ func FindSnippets(text string, query string, contextLen int, maxSnippets int) []
 	if contextLen < 0 {
 		contextLen = 0
 	}
-	tr := []rune(text)
-	qr := []rune(query)
-	if len(qr) == 0 || len(tr) == 0 {
+	if query == "" || text == "" {
 		return nil
 	}
 
 	snips := make([]string, 0, maxSnippets)
-	i := 0
-	for i+len(qr) <= len(tr) {
-		idx := indexRunesFrom(tr, qr, i)
+
+	searchFrom := 0
+	for len(snips) < maxSnippets && searchFrom <= len(text) {
+		idx := strings.Index(text[searchFrom:], query)
 		if idx < 0 {
 			break
 		}
-		start := idx - contextLen
-		if start < 0 {
-			start = 0
-		}
-		end := idx + len(qr) + contextLen
-		if end > len(tr) {
-			end = len(tr)
-		}
-		left := string(tr[start:idx])
-		mid := string(tr[idx : idx+len(qr)])
-		right := string(tr[idx+len(qr) : end])
-		snips = append(snips, left+"【"+mid+"】"+right)
-		if len(snips) >= maxSnippets {
-			break
-		}
+		matchStart := searchFrom + idx
+		matchEnd := matchStart + len(query)
+
+		start := moveLeftRunes(text, matchStart, contextLen)
+		end := moveRightRunes(text, matchEnd, contextLen)
+
+		var b strings.Builder
+		b.Grow((end - start) + 4)
+		b.WriteString(text[start:matchStart])
+		b.WriteString("【")
+		b.WriteString(text[matchStart:matchEnd])
+		b.WriteString("】")
+		b.WriteString(text[matchEnd:end])
+		snips = append(snips, b.String())
+
 		// move forward; avoid infinite loop
-		i = idx + len(qr)
+		if matchEnd <= searchFrom {
+			searchFrom++
+		} else {
+			searchFrom = matchEnd
+		}
 	}
 	return snips
 }
 
-func indexRunesFrom(hay []rune, needle []rune, from int) int {
-	if len(needle) == 0 {
-		return from
+func moveLeftRunes(s string, fromByte int, n int) int {
+	if n <= 0 {
+		return clampByteIndex(fromByte, len(s))
 	}
-	if from < 0 {
-		from = 0
-	}
-	if len(needle) > len(hay)-from {
-		return -1
-	}
-	for i := from; i+len(needle) <= len(hay); i++ {
-		ok := true
-		for j := 0; j < len(needle); j++ {
-			if hay[i+j] != needle[j] {
-				ok = false
-				break
-			}
+	i := clampByteIndex(fromByte, len(s))
+	for k := 0; k < n && i > 0; k++ {
+		_, size := utf8.DecodeLastRuneInString(s[:i])
+		if size <= 0 {
+			i--
+			continue
 		}
-		if ok {
-			return i
-		}
+		i -= size
 	}
-	return -1
+	return i
+}
+
+func moveRightRunes(s string, fromByte int, n int) int {
+	if n <= 0 {
+		return clampByteIndex(fromByte, len(s))
+	}
+	i := clampByteIndex(fromByte, len(s))
+	for k := 0; k < n && i < len(s); k++ {
+		_, size := utf8.DecodeRuneInString(s[i:])
+		if size <= 0 {
+			break
+		}
+		i += size
+	}
+	return i
+}
+
+func clampByteIndex(i int, length int) int {
+	if i < 0 {
+		return 0
+	}
+	if i > length {
+		return length
+	}
+	return i
 }

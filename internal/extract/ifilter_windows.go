@@ -5,6 +5,7 @@ package extract
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -281,4 +282,33 @@ func ifilterExtractText(ctx context.Context, path string, maxBytes int64) (strin
 
 func failed(hr uint32) bool {
 	return hr&0x80000000 != 0
+}
+
+// HasPDFIFilter best-effort checks whether the current Windows system has a usable
+// PDF IFilter registered (e.g. via Office/WPS/PDF readers).
+//
+// This is intended for UI hints only; even if it returns true, a specific PDF may
+// still fail to extract.
+func HasPDFIFilter() bool {
+	f, err := os.CreateTemp("", "ofind_ifilter_*.pdf")
+	if err != nil {
+		return false
+	}
+	path := f.Name()
+	// Write minimal bytes so filters that peek at header don't immediately reject.
+	_, _ = f.WriteString("%PDF-1.1\n%âãÏÓ\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n")
+	_ = f.Close()
+	defer os.Remove(path)
+
+	if err := coInitialize(); err != nil {
+		return false
+	}
+	defer coUninitialize()
+
+	flt, err := loadIFilter(path)
+	if err != nil || flt == nil {
+		return false
+	}
+	flt.release()
+	return true
 }

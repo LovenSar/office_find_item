@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"unicode/utf8"
 )
 
 type Extractor func(ctx context.Context, path string) (string, error)
@@ -17,6 +18,28 @@ type Extractor func(ctx context.Context, path string) (string, error)
 type Cache struct {
 	Root         string
 	MaxTextBytes int64
+}
+
+func (c *Cache) effectiveMaxTextBytes() int64 {
+	if c.MaxTextBytes > 0 {
+		return c.MaxTextBytes
+	}
+	return 2 * 1024 * 1024
+}
+
+func truncateUTF8ToBytes(s string, maxBytes int) string {
+	if maxBytes <= 0 || len(s) <= maxBytes {
+		return s
+	}
+	cut := maxBytes
+	// Move left to a valid rune boundary (at most 3 bytes).
+	for cut > 0 && cut < len(s) && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	if cut <= 0 {
+		return ""
+	}
+	return s[:cut]
 }
 
 func (c *Cache) cachePath(absPath string) string {
@@ -48,6 +71,11 @@ func (c *Cache) GetOrExtract(ctx context.Context, absPath string, extractor Extr
 	if err != nil {
 		return "", err
 	}
+	// Hard cap: avoid extractor bugs causing huge in-memory strings / cache files.
+	maxBytes := c.effectiveMaxTextBytes()
+	if int64(len(text)) > maxBytes {
+		text = truncateUTF8ToBytes(text, int(maxBytes))
+	}
 	_ = c.write(cp, st.Size(), st.ModTime(), text)
 	return text, nil
 }
@@ -73,14 +101,23 @@ func (c *Cache) tryRead(path string, size int64, mtime time.Time) (string, bool)
 		return "", false
 	}
 	defer zr.Close()
-	b, err := io.ReadAll(zr)
+	maxBytes := c.effectiveMaxTextBytes()
+	lr := io.LimitReader(zr, maxBytes+1)
+	b, err := io.ReadAll(lr)
 	if err != nil {
 		return "", false
+	}
+	if int64(len(b)) > maxBytes {
+		b = b[:maxBytes]
 	}
 	return string(b), true
 }
 
 func (c *Cache) write(path string, size int64, mtime time.Time, text string) error {
+	maxBytes := c.effectiveMaxTextBytes()
+	if int64(len(text)) > maxBytes {
+		text = truncateUTF8ToBytes(text, int(maxBytes))
+	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}

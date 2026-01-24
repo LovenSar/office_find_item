@@ -84,6 +84,10 @@ func startWorkerProcess(ctx context.Context, exePath string, root string, query 
 		args = append(args, "-workers", strconv.Itoa(workers))
 	}
 	cmd := exec.CommandContext(ctx, exePath, args...)
+	// UI 勾选控制：是否允许 PDF 走纯 Go fallback（可能导致内存/CPU 暴涨）。
+	// worker 目前主要用于 CLI/UI 的非 daemon 模式，这里保持和 daemon 一致的 env 处理。
+	// 默认显式关闭，避免父进程环境变量污染。
+	cmd.Env = append(os.Environ(), "OFIND_PDF_PUREGO=0")
 	debugConsole := os.Getenv("OFIND_DEBUG_CONSOLE") == "1"
 	hide := !debugConsole
 	flags := uint32(0)
@@ -124,12 +128,18 @@ func startWorkerProcess(ctx context.Context, exePath string, root string, query 
 	return nil
 }
 
-func startDaemonProcess(exePath string, root string, workers int, onOut func(daemonOut)) (*daemonProcess, error) {
+func startDaemonProcess(exePath string, root string, workers int, enablePureGoPDF bool, onOut func(daemonOut)) (*daemonProcess, error) {
 	args := []string{"-daemon", "-roots", root}
 	if workers > 0 {
 		args = append(args, "-workers", strconv.Itoa(workers))
 	}
 	cmd := exec.Command(exePath, args...)
+	if enablePureGoPDF {
+		cmd.Env = append(os.Environ(), "OFIND_PDF_PUREGO=1")
+	} else {
+		// 显式关闭：避免父进程环境变量污染导致意外开启。
+		cmd.Env = append(os.Environ(), "OFIND_PDF_PUREGO=0")
+	}
 	debugConsole := os.Getenv("OFIND_DEBUG_CONSOLE") == "1"
 	hide := !debugConsole
 	flags := uint32(0)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -33,7 +34,10 @@ func (c Config) WorkerCount() int {
 }
 
 type Result struct {
-	Path string
+	Path      string
+	Extension string
+	Size      int64
+	ModTime   int64
 	// Snippet 为命中上下文（已包含对 query 的“标记高亮”）
 	Snippet string
 }
@@ -64,6 +68,7 @@ var supportedExt = map[string]struct{}{
 	".ppt":  {},
 	".pptx": {},
 	".pdf":  {},
+	".vsdx": {},
 }
 
 func Find(cfg Config, onProgress ProgressFn) ([]Result, error) {
@@ -125,6 +130,7 @@ func findWithContext(ctx context.Context, cfg Config, onProgress ProgressFn) []R
 
 func searchWithContext(ctx context.Context, cfg Config, onProgress ProgressFn, onResult ResultFn) {
 	workers := cfg.WorkerCount()
+
 	jobs := make(chan string, workers*4)
 
 	var scanned uint64
@@ -149,8 +155,22 @@ func searchWithContext(ctx context.Context, cfg Config, onProgress ProgressFn, o
 				found, snippet, _ := extract.FileFindFirst(ctx, path, cfg.Query, cfg.ContextLen)
 				if found {
 					atomic.AddUint64(&matches, 1)
+					var (
+						size    int64
+						modTime int64
+					)
+					if st, err := os.Stat(path); err == nil {
+						size = st.Size()
+						modTime = st.ModTime().Unix()
+					}
 					select {
-					case resCh <- Result{Path: path, Snippet: snippet}:
+					case resCh <- Result{
+						Path:      path,
+						Snippet:   snippet,
+						Extension: strings.ToLower(filepath.Ext(path)),
+						Size:      size,
+						ModTime:   modTime,
+					}:
 					case <-ctx.Done():
 						return
 					}
@@ -181,6 +201,7 @@ func searchWithContext(ctx context.Context, cfg Config, onProgress ProgressFn, o
 				if _, ok := supportedExt[ext]; !ok {
 					return nil
 				}
+
 				select {
 				case jobs <- path:
 				case <-ctx.Done():
