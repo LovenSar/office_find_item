@@ -10,6 +10,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
 	"unsafe"
 
 	"github.com/lxn/walk"
@@ -82,6 +83,25 @@ func RunUI() error {
 		status.SetText(msg + " | " + sfx)
 	}
 
+	countQueryChars := func(q string) (asciiCount int, unicodeCount int) {
+		for _, r := range strings.TrimSpace(q) {
+			if unicode.IsSpace(r) {
+				continue
+			}
+			if r <= 0x7f {
+				asciiCount++
+			} else {
+				unicodeCount++
+			}
+		}
+		return asciiCount, unicodeCount
+	}
+
+	queryIsSearchable := func(q string) bool {
+		asciiCount, unicodeCount := countQueryChars(q)
+		return asciiCount >= 3 || unicodeCount >= 2
+	}
+
 	clearSelection := func() {
 		if tableView == nil {
 			return
@@ -140,6 +160,10 @@ func RunUI() error {
 			stopSearch()
 			model.Reset()
 			setStatus("Ready")
+			return
+		}
+		if (q1 != "" && !queryIsSearchable(q1)) || (q2 != "" && !queryIsSearchable(q2)) || (q3 != "" && !queryIsSearchable(q3)) {
+			setStatus("输入太短：至少3个ASCII字符或2个Unicode字符才开始搜索")
 			return
 		}
 		roots := strings.TrimSpace(rootsEdit.Text())
@@ -518,6 +542,10 @@ func RunUI() error {
 		q3 := strings.TrimSpace(query3Edit.Text())
 		if q1 == "" && q2 == "" && q3 == "" {
 			setStatus("Ready")
+			return
+		}
+		if (q1 != "" && !queryIsSearchable(q1)) || (q2 != "" && !queryIsSearchable(q2)) || (q3 != "" && !queryIsSearchable(q3)) {
+			setStatus("输入太短：至少3个ASCII字符或2个Unicode字符才开始搜索")
 			return
 		}
 		setStatus("输入中...停止输入后开始搜索")
