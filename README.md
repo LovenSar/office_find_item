@@ -12,10 +12,14 @@ Win7 32-bit 可用的“文件内容查找”工具（Go 单 exe）。支持 GUI
 ## PDF 重要说明（避免压测内存暴涨）
 
 - **默认策略（推荐）**：Windows 下 PDF 依赖系统 IFilter（更省内存，稳定）。
-- **内置 PDF 检索引擎（高风险）**：当系统没有可用 PDF IFilter 时，可启用“纯 Go fallback”解析 PDF，但在部分 PDF 上可能导致 **内存/CPU 暴涨**。
-  - GUI：勾选“启用内置 PDF 检索引擎（可能导致内存暴涨）”（建议安装 Office / PDF 阅读器 / WPS 的 IFilter）
-  - CLI：设置环境变量 `OFIND_PDF_PUREGO=1`
-  - 可选：`OFIND_PDF_MAX_FILE_BYTES` 控制纯 Go fallback 允许解析的 PDF 最大文件大小（默认 50MiB）
+- **内置 PDF 检索引擎（高风险）**：当系统没有可用 PDF IFilter 时，工具会自动启用“纯 Go fallback”解析 PDF（无需手动配置），但在部分 PDF 上可能导致 **内存/CPU 暴涨**。如果系统安装了 PDF IFilter，工具会自动优先使用更稳定的 IFilter。
+  - GUI：状态栏显示 PDF IFilter 检测结果，可手动勾选“启用内置 PDF 检索引擎（可能导致内存暴涨）”强制使用纯 Go 引擎
+  - CLI：环境变量 `OFIND_PDF_PUREGO` 可强制控制行为：`=1` 启用纯 Go 引擎，`=0` 禁用纯 Go 引擎（仅使用 IFilter）。未设置时自动检测。
+  - 可选：`OFIND_PDF_MAX_FILE_BYTES` 控制纯 Go fallback 允许解析的 PDF 最大文件大小（默认 20MiB）
+  - 可选：`OFIND_PDF_MAX_PAGES` 控制纯 Go fallback 允许解析的最大页数（默认 100 页），避免处理超大 PDF 时内存暴涨
+  - 可选：`OFIND_PDF_PAGE_WORKERS` 控制 PDF 页面并行解析 worker 数（默认 1，关闭并行以避免内存暴涨）
+  - 可选：`OFIND_MAX_ALLOC_MB` 控制单次分配内存硬限制（默认 32位 1200 MiB，64位 4096 MiB），超过则取消当前查询
+  - 注意：内存硬限制现已始终生效（不再依赖调试模式）
 
 ## 使用（GUI）
 

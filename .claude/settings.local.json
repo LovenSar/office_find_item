@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go test:*)",
+      "Bash(./test_ofind.exe:*)",
+      "Bash(go vet:*)"
+    ]
+  }
+}

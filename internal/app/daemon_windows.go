@@ -99,11 +99,12 @@ func RunDaemon(opts CLIOptions) error {
 	var processed uint64
 
 	startQueryMonitor := func(ctx context.Context, cmd daemonCmd, cancel context.CancelFunc) {
-		if !debugEnabled {
-			return
-		}
 		go func() {
 			maxAlloc := maxAllocBytes()
+			// 如果用户明确设置OFIND_MAX_ALLOC_MB=0，则不启动内存监控
+			if maxAlloc == 0 {
+				return
+			}
 			ticker := time.NewTicker(2 * time.Second)
 			defer ticker.Stop()
 			var lastIO winutil.ProcessIOCounters
@@ -118,7 +119,8 @@ func RunDaemon(opts CLIOptions) error {
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
 
-				if maxAlloc > 0 && m.Alloc > maxAlloc {
+				// 内存硬限制：始终生效，无论是否启用调试模式
+				if m.Alloc > maxAlloc {
 					log.Printf("[HARD-LIMIT] PID=%d | QueryID=%d | Alloc=%.2f MiB | Limit=%.2f MiB | Action=cancel",
 						os.Getpid(), cmd.QueryID,
 						float64(m.Alloc)/1024/1024, float64(maxAlloc)/1024/1024)
@@ -129,48 +131,51 @@ func RunDaemon(opts CLIOptions) error {
 					return
 				}
 
-				ioStat, _ := winutil.GetProcessIOCounters()
-				now := time.Now()
-				dt := now.Sub(lastAt).Seconds()
-				if lastAt.IsZero() || dt <= 0 {
-					dt = 0
-				}
-				dRead := uint64(0)
-				dWrite := uint64(0)
-				if ioStat.ReadBytes >= lastIO.ReadBytes {
-					dRead = ioStat.ReadBytes - lastIO.ReadBytes
-				}
-				if ioStat.WriteBytes >= lastIO.WriteBytes {
-					dWrite = ioStat.WriteBytes - lastIO.WriteBytes
-				}
-				readRate := 0.0
-				writeRate := 0.0
-				if dt > 0 {
-					readRate = float64(dRead) / 1024 / 1024 / dt
-					writeRate = float64(dWrite) / 1024 / 1024 / dt
-				}
-				lastIO = ioStat
-				lastAt = now
+				// 仅在调试模式下输出详细监控信息
+				if debugEnabled {
+					ioStat, _ := winutil.GetProcessIOCounters()
+					now := time.Now()
+					dt := now.Sub(lastAt).Seconds()
+					if lastAt.IsZero() || dt <= 0 {
+						dt = 0
+					}
+					dRead := uint64(0)
+					dWrite := uint64(0)
+					if ioStat.ReadBytes >= lastIO.ReadBytes {
+						dRead = ioStat.ReadBytes - lastIO.ReadBytes
+					}
+					if ioStat.WriteBytes >= lastIO.WriteBytes {
+						dWrite = ioStat.WriteBytes - lastIO.WriteBytes
+					}
+					readRate := 0.0
+					writeRate := 0.0
+					if dt > 0 {
+						readRate = float64(dRead) / 1024 / 1024 / dt
+						writeRate = float64(dWrite) / 1024 / 1024 / dt
+					}
+					lastIO = ioStat
+					lastAt = now
 
-				cw, _ := cur.Load().(currentWork)
-				curFor := time.Duration(0)
-				if cw.Path != "" && !cw.Start.IsZero() {
-					curFor = time.Since(cw.Start)
-				}
+					cw, _ := cur.Load().(currentWork)
+					curFor := time.Duration(0)
+					if cw.Path != "" && !cw.Start.IsZero() {
+						curFor = time.Since(cw.Start)
+					}
 
-				// 注意：这里是 debug 日志，用于定位卡顿/内存暴涨。路径可能较长，但更利于定位具体文件。
-				// processed 为近似计数（job 被取出即算一次）。
-				// Use log.Printf (same output as ofind_debug.log in debug mode).
-				// Example:
-				// [QMON] QueryID=1 | Root=E:\Docs | Processed=123 | Alloc=... | IO(R/W)=... | IO(R/W)=.../s | Cur=... | CurFor=...
-				// Keep format stable-ish for grep.
-				log.Printf("[QMON] PID=%d | QueryID=%d | Root=%s | Processed=%d | Goroutines=%d | Alloc=%.2f MiB | Sys=%.2f MiB | NumGC=%d | IO(R/W)=%.2f/%.2f MiB | IO(R/W)=%.2f/%.2f MiB/s | CurFor=%s | Cur=%s",
-					os.Getpid(), cmd.QueryID, root, atomic.LoadUint64(&processed), runtime.NumGoroutine(),
-					float64(m.Alloc)/1024/1024, float64(m.Sys)/1024/1024, m.NumGC,
-					float64(ioStat.ReadBytes)/1024/1024, float64(ioStat.WriteBytes)/1024/1024,
-					readRate, writeRate,
-					curFor.Truncate(10*time.Millisecond).String(),
-					cw.Path)
+					// 注意：这里是 debug 日志，用于定位卡顿/内存暴涨。路径可能较长，但更利于定位具体文件。
+					// processed 为近似计数（job 被取出即算一次）。
+					// Use log.Printf (same output as ofind_debug.log in debug mode).
+					// Example:
+					// [QMON] QueryID=1 | Root=E:\Docs | Processed=123 | Alloc=... | IO(R/W)=... | IO(R/W)=.../s | Cur=... | CurFor=...
+					// Keep format stable-ish for grep.
+					log.Printf("[QMON] PID=%d | QueryID=%d | Root=%s | Processed=%d | Goroutines=%d | Alloc=%.2f MiB | Sys=%.2f MiB | NumGC=%d | IO(R/W)=%.2f/%.2f MiB | IO(R/W)=%.2f/%.2f MiB/s | CurFor=%s | Cur=%s",
+						os.Getpid(), cmd.QueryID, root, atomic.LoadUint64(&processed), runtime.NumGoroutine(),
+						float64(m.Alloc)/1024/1024, float64(m.Sys)/1024/1024, m.NumGC,
+						float64(ioStat.ReadBytes)/1024/1024, float64(ioStat.WriteBytes)/1024/1024,
+						readRate, writeRate,
+						curFor.Truncate(10*time.Millisecond).String(),
+						cw.Path)
+				}
 			}
 		}()
 	}
@@ -276,7 +281,14 @@ func RunDaemon(opts CLIOptions) error {
 
 						// 需要从内容搜索
 						snips, err := extract.FileFindSnippets(ctx, p, t, contextLen, maxSnips)
-						if err != nil || len(snips) == 0 {
+						if err != nil {
+							if debugEnabled {
+								log.Printf("[ERROR] FileFindSnippets failed for %s: %v", p, err)
+							}
+							allMatch = false
+							break
+						}
+						if len(snips) == 0 {
 							allMatch = false
 							break
 						}
@@ -405,11 +417,17 @@ func bytesTrimSpace(b []byte) []byte {
 func maxAllocBytes() uint64 {
 	if v := strings.TrimSpace(os.Getenv("OFIND_MAX_ALLOC_MB")); v != "" {
 		if n, err := strconv.ParseUint(v, 10, 64); err == nil {
-			if n > 0 {
-				return n * 1024 * 1024
+			if n == 0 {
+				return 0 // 用户明确禁用内存限制
 			}
-			return 0
+			// 添加合理上限（16384 MiB = 16GB），避免设置过大值导致问题
+			const maxLimit = 16384
+			if n > maxLimit {
+				n = maxLimit
+			}
+			return n * 1024 * 1024
 		}
+		// 解析失败时使用默认值
 	}
 	if runtime.GOARCH == "386" {
 		return 1200 * 1024 * 1024

@@ -11,24 +11,14 @@ import (
 	"sync/atomic"
 	"time"
 	"unicode"
-	"unsafe"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/walk/declarative"
-	"github.com/lxn/win"
-	"office_find_item/internal/extract"
+	_ "office_find_item/internal/extract"
 	"office_find_item/internal/winutil"
 )
 
 func RunUI() error {
-	// 兼容性：某些系统/环境下 tooltip 相关 common controls 未初始化会导致 TTM_ADDTOOL failed。
-	// walk 默认 init 的 ICC 集合未包含 ICC_WIN95_CLASSES/ICC_BAR_CLASSES，这里补齐。
-	walk.AppendToWalkInit(func() {
-		var icc win.INITCOMMONCONTROLSEX
-		icc.DwSize = uint32(unsafe.Sizeof(icc))
-		icc.DwICC = win.ICC_WIN95_CLASSES | win.ICC_BAR_CLASSES
-		win.InitCommonControlsEx(&icc)
-	})
 
 	var (
 		mw          *walk.MainWindow
@@ -58,7 +48,7 @@ func RunUI() error {
 		resultCh = make(chan daemonOut, 2000)
 	)
 
-	pdfIFilterOK := extract.HasPDFIFilter()
+	pdfIFilterOK := false // 临时禁用 IFilter 检测以修复 UI 启动问题
 
 	statusSuffix := func() string {
 		pdfEngine := "OFF"

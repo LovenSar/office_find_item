@@ -12,6 +12,7 @@ github.com/lxn/win
 ## explicit; go 1.12
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/windows
+golang.org/x/sys/windows/registry
 # gopkg.in/Knetic/govaluate.v3 v3.0.0
 ## explicit
 gopkg.in/Knetic/govaluate.v3

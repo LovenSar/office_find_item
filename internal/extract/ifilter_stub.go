@@ -30,3 +30,8 @@ func ifilterFindSnippets(ctx context.Context, path string, query string, context
 	_ = maxSnippets
 	return nil, errors.New("该格式需要 Windows IFilter 支持（当前非 Windows）")
 }
+
+func HasPDFIFilter() bool {
+	// 非Windows平台没有IFilter
+	return false
+}

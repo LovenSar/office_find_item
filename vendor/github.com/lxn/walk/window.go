@@ -551,7 +551,7 @@ func initWindowWithCfg(cfg *windowCfg) error {
 
 		var initCtrls win.INITCOMMONCONTROLSEX
 		initCtrls.DwSize = uint32(unsafe.Sizeof(initCtrls))
-		initCtrls.DwICC = win.ICC_LINK_CLASS | win.ICC_LISTVIEW_CLASSES | win.ICC_PROGRESS_CLASS | win.ICC_TAB_CLASSES | win.ICC_TREEVIEW_CLASSES
+		initCtrls.DwICC = win.ICC_LINK_CLASS | win.ICC_LISTVIEW_CLASSES | win.ICC_PROGRESS_CLASS | win.ICC_TAB_CLASSES | win.ICC_TREEVIEW_CLASSES | win.ICC_WIN95_CLASSES | win.ICC_STANDARD_CLASSES | win.ICC_COOL_CLASSES
 		win.InitCommonControlsEx(&initCtrls)
 
 		defaultWndProcPtr = syscall.NewCallback(defaultWndProc)

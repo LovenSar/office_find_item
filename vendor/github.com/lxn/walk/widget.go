@@ -134,9 +134,9 @@ func (wb *WidgetBase) init(widget Widget) error {
 	if err != nil {
 		return err
 	}
-	// Tooltip is an enhancement. Some systems/environments may fail to register
-	// (TTM_ADDTOOL failed). Ignore to avoid crashing the whole app.
-	_ = tt.AddTool(wb.window.(Widget))
+	if err := tt.AddTool(wb.window.(Widget)); err != nil {
+		return err
+	}
 
 	wb.toolTipTextProperty = NewProperty(
 		func() interface{} {

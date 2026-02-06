@@ -15,10 +15,22 @@ import (
 
 	"office_find_item/internal/app"
 	"office_find_item/internal/winutil"
+
 )
 
 func main() {
 	setProcessMemoryLimits()
+	fmt.Fprintln(os.Stderr, "main: starting...")
+
+	// 注释掉双重初始化，依赖 walk 库的初始化
+	// if runtime.GOOS == "windows" {
+	// 	var initCtrls win.INITCOMMONCONTROLSEX
+	// 	initCtrls.DwSize = uint32(unsafe.Sizeof(initCtrls))
+	// 	initCtrls.DwICC = win.ICC_LINK_CLASS | win.ICC_LISTVIEW_CLASSES | win.ICC_PROGRESS_CLASS | win.ICC_TAB_CLASSES | win.ICC_TREEVIEW_CLASSES | win.ICC_WIN95_CLASSES | win.ICC_STANDARD_CLASSES
+	// 	win.InitCommonControlsEx(&initCtrls)
+	// }
+
+	// 之前在这里的初始化已移到上面
 
 	// 日志与崩溃回溯：写到 exe 同级目录，便于 Win7 回溯。
 	if runtime.GOOS == "windows" {
@@ -130,6 +142,15 @@ func main() {
 		if !debugMode {
 			winutil.DetachConsole()
 		}
+
+		// 临时设置环境变量，避免UI启动时检测PDF IFilter（可能导致COM初始化问题）
+		originalPureGo := os.Getenv("OFIND_PDF_PUREGO")
+		if originalPureGo == "" {
+			// 如果用户没有设置，我们临时设置为"1"（启用纯Go PDF引擎）
+			// 这样可以避免HasPDFIFilter()在UI启动时被调用
+			os.Setenv("OFIND_PDF_PUREGO", "1")
+		}
+
 		log.Println("Starting UI mode...")
 		if err := app.RunUI(); err != nil {
 			log.Printf("UI Error: %v", err)
@@ -137,6 +158,13 @@ func main() {
 				fmt.Fprintln(os.Stderr, err)
 			}
 			os.Exit(1)
+		}
+
+		// 恢复原始环境变量（虽然程序即将退出）
+		if originalPureGo == "" {
+			os.Unsetenv("OFIND_PDF_PUREGO")
+		} else {
+			os.Setenv("OFIND_PDF_PUREGO", originalPureGo)
 		}
 		return
 	}

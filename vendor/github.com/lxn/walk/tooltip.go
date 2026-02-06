@@ -181,9 +181,7 @@ func (tt *ToolTip) addTool(hwnd win.HWND, track bool) error {
 	ti.UId = uintptr(hwnd)
 
 	if win.FALSE == tt.SendMessage(win.TTM_ADDTOOL, 0, uintptr(unsafe.Pointer(&ti))) {
-		// Tooltip is an enhancement. Some systems/environments may fail to register
-		// (TTM_ADDTOOL failed). Ignore to avoid crashing the whole app.
-		return nil
+		return newError("TTM_ADDTOOL failed")
 	}
 
 	return nil

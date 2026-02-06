@@ -2118,24 +2118,10 @@ func (tv *TableView) lvWndProc(origWndProcPtr uintptr, hwnd win.HWND, msg uint32
 				}
 
 				utf16 := syscall.StringToUTF16(text)
-				// Some systems (e.g. Win7 / older common controls) may pass a CchTextMax
-				// larger than 264. The old implementation used a fixed [264] buffer and
-				// then indexed max-1, which can panic when max > 264.
-				//
-				// Use CchTextMax to construct a slice view of the provided buffer and
-				// cap it to a reasonable maximum.
-				bufLen := int(di.Item.CchTextMax)
-				if bufLen > 0 && di.Item.PszText != nil {
-					if bufLen > 8192 {
-						bufLen = 8192
-					}
-					buf := (*[8192]uint16)(unsafe.Pointer(di.Item.PszText))[:bufLen:bufLen]
-					max := mini(len(utf16), bufLen)
-					if max > 0 {
-						copy(buf[:max], utf16[:max])
-						buf[max-1] = 0
-					}
-				}
+				buf := (*[264]uint16)(unsafe.Pointer(di.Item.PszText))
+				max := mini(len(utf16), int(di.Item.CchTextMax))
+				copy((*buf)[:], utf16[:max])
+				(*buf)[max-1] = 0
 			}
 
 			if (tv.imageProvider != nil || tv.styler != nil) && di.Item.Mask&win.LVIF_IMAGE > 0 {
