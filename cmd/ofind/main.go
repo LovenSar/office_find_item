@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 )
 
 func main() {
+	setProcessMemoryLimits()
+
 	// 日志与崩溃回溯：写到 exe 同级目录，便于 Win7 回溯。
 	if runtime.GOOS == "windows" {
 		exe, _ := os.Executable()
@@ -223,4 +226,24 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func setProcessMemoryLimits() {
+	// Allow override via env (MiB). Use 0 or negative to disable.
+	if v := strings.TrimSpace(os.Getenv("OFIND_MEM_LIMIT_MB")); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			if n > 0 {
+				debug.SetMemoryLimit(n * 1024 * 1024)
+			}
+			return
+		}
+	}
+
+	// Default limits: keep conservative to avoid OOM on large scans.
+	if runtime.GOARCH == "386" {
+		debug.SetMemoryLimit(1400 * 1024 * 1024)
+		debug.SetGCPercent(50)
+		return
+	}
+	debug.SetMemoryLimit(4096 * 1024 * 1024)
 }

@@ -229,3 +229,83 @@ func ooxmlExtractText(ctx context.Context, path string, maxBytes int64) (string,
 	}
 	return sb.String(), nil
 }
+
+func ooxmlFindSnippets(ctx context.Context, path string, query string, contextLen int, maxSnippets int) ([]string, error) {
+	q := strings.TrimSpace(query)
+	if q == "" {
+		return nil, errors.New("query 为空")
+	}
+
+	zr, err := zip.OpenReader(path)
+	if err != nil {
+		return nil, err
+	}
+	defer zr.Close()
+
+	ext := strings.ToLower(filepath.Ext(path))
+	qb := []byte(q)
+	
+	allSnips := make([]string, 0, maxSnippets)
+
+	for _, f := range zr.File {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		name := strings.ToLower(f.Name)
+		if !ooxmlEntryInteresting(ext, name) {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			continue
+		}
+		found, err := xmlStreamFindSnippets(ctx, rc, q, qb, contextLen, maxSnippets - len(allSnips))
+		_ = rc.Close()
+		if err == nil && len(found) > 0 {
+			allSnips = append(allSnips, found...)
+			if len(allSnips) >= maxSnippets {
+				return allSnips, nil
+			}
+		}
+	}
+	return allSnips, nil
+}
+
+func xmlStreamFindSnippets(ctx context.Context, r io.Reader, query string, queryBytes []byte, contextLen int, maxSnippets int) ([]string, error) {
+	if maxSnippets <= 0 {
+		return nil, nil
+	}
+	// Limit read per XML file to avoid infinite loops or memory bombs
+	const maxScanBytes = 20 * 1024 * 1024
+	r = io.LimitReader(r, maxScanBytes)
+
+	dec := xml.NewDecoder(r)
+	snips := make([]string, 0, maxSnippets)
+
+	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		tok, err := dec.Token()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return snips, nil
+			}
+			return snips, err
+		}
+		switch v := tok.(type) {
+		case xml.CharData:
+			if len(queryBytes) > 0 && !bytes.Contains(v, queryBytes) {
+				continue
+			}
+			text := string(v)
+			found := FindSnippets(text, query, contextLen, maxSnippets-len(snips))
+			if len(found) > 0 {
+				snips = append(snips, found...)
+				if len(snips) >= maxSnippets {
+					return snips, nil
+				}
+			}
+		}
+	}
+}

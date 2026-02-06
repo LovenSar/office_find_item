@@ -13,12 +13,13 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"office_find_item/internal/cache"
 	"office_find_item/internal/extract"
 	"office_find_item/internal/winutil"
 )
@@ -74,12 +75,6 @@ func RunDaemon(opts CLIOptions) error {
 		return errors.New("root 为空")
 	}
 
-	cacheRoot, err := winutil.BestCacheDir()
-	if err != nil {
-		return err
-	}
-	c := &cache.Cache{Root: filepath.Join(cacheRoot, "text"), MaxTextBytes: 2 * 1024 * 1024}
-
 	in := bufio.NewReader(os.Stdin)
 	enc := json.NewEncoder(os.Stdout)
 	outMu := sync.Mutex{}
@@ -103,11 +98,12 @@ func RunDaemon(opts CLIOptions) error {
 	cur.Store(currentWork{})
 	var processed uint64
 
-	startQueryMonitor := func(ctx context.Context, cmd daemonCmd) {
+	startQueryMonitor := func(ctx context.Context, cmd daemonCmd, cancel context.CancelFunc) {
 		if !debugEnabled {
 			return
 		}
 		go func() {
+			maxAlloc := maxAllocBytes()
 			ticker := time.NewTicker(2 * time.Second)
 			defer ticker.Stop()
 			var lastIO winutil.ProcessIOCounters
@@ -121,6 +117,17 @@ func RunDaemon(opts CLIOptions) error {
 
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
+
+				if maxAlloc > 0 && m.Alloc > maxAlloc {
+					log.Printf("[HARD-LIMIT] PID=%d | QueryID=%d | Alloc=%.2f MiB | Limit=%.2f MiB | Action=cancel",
+						os.Getpid(), cmd.QueryID,
+						float64(m.Alloc)/1024/1024, float64(maxAlloc)/1024/1024)
+					debug.FreeOSMemory()
+					if cancel != nil {
+						cancel()
+					}
+					return
+				}
 
 				ioStat, _ := winutil.GetProcessIOCounters()
 				now := time.Now()
@@ -194,12 +201,18 @@ func RunDaemon(opts CLIOptions) error {
 
 		atomic.StoreUint64(&processed, 0)
 		cur.Store(currentWork{})
-		startQueryMonitor(ctx, cmd)
+		startQueryMonitor(ctx, cmd, cxl)
 
 		workers := opts.Workers
 		if workers <= 0 {
 			workers = runtime.NumCPU()
 			if workers <= 0 {
+				workers = 4
+			}
+			if runtime.GOARCH == "386" && workers > 2 {
+				workers = 2
+			}
+			if workers > 4 {
 				workers = 4
 			}
 		}
@@ -233,84 +246,20 @@ func RunDaemon(opts CLIOptions) error {
 
 					fileName := filepath.Base(p)
 					fileNameLower := strings.ToLower(fileName)
+					ext := strings.ToLower(filepath.Ext(p))
 
 					// 先用文件名做快速匹配：若某个词在文件名中命中，则该词无需再提取全文。
 					matchedInName := make([]bool, len(terms))
-					needText := false
 					for i, t := range terms {
 						if t == "" {
 							continue
 						}
 						if strings.Contains(fileName, t) || strings.Contains(fileNameLower, strings.ToLower(t)) {
 							matchedInName[i] = true
-						} else {
-							needText = true
 						}
 					}
 
-					var text string
-					if needText {
-						ext := strings.ToLower(filepath.Ext(p))
-						var (
-							st       os.FileInfo
-							statErr  error
-							sizeHint int64
-						)
-						st, statErr = os.Stat(p)
-						if statErr == nil {
-							sizeHint = st.Size()
-						}
-
-						needMemProbe := debugEnabled && (sizeHint >= 5*1024*1024 ||
-							ext == ".docx" || ext == ".xlsx" || ext == ".pptx" || ext == ".vsdx" || ext == ".pdf")
-						var before runtime.MemStats
-						if needMemProbe {
-							runtime.ReadMemStats(&before)
-						}
-
-						t, err := c.GetOrExtract(ctx, p, func(ctx context.Context, path string) (string, error) {
-							return extract.FileExtractText(ctx, path, c.MaxTextBytes)
-						})
-
-						if needMemProbe {
-							var after runtime.MemStats
-							runtime.ReadMemStats(&after)
-							if after.Alloc > before.Alloc {
-								delta := after.Alloc - before.Alloc
-								// 只记录明显的内存“尖峰”，避免日志爆炸。
-								if delta >= 256*1024*1024 {
-									log.Printf("[MEMSPIKE] PID=%d | QueryID=%d | Delta=%.2f MiB | Alloc=%.2f MiB | Sys=%.2f MiB | Size=%d | Ext=%s | Path=%s",
-										os.Getpid(), cmd.QueryID,
-										float64(delta)/1024/1024,
-										float64(after.Alloc)/1024/1024,
-										float64(after.Sys)/1024/1024,
-										sizeHint,
-										ext,
-										p)
-								}
-							}
-						}
-
-						if err != nil {
-							// debug：记录慢/异常文件，便于定位。
-							if debugEnabled {
-								elapsed := time.Since(startAt)
-								if elapsed >= 800*time.Millisecond {
-									if st != nil {
-										log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Size=%d | Ext=%s | Path=%s | Err=%v",
-											os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), sizeHint, ext, p, err)
-									} else {
-										log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Path=%s | Err=%v",
-											os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), p, err)
-									}
-								}
-							}
-							continue
-						}
-						text = t
-					}
-
-					// 交集：每个词都必须命中（文件名命中或正文命中均可）。
+					// 统一流式处理（不再预提取全文）
 					allMatch := true
 					snipsOut := make([]string, 0, maxTotal)
 					for i, t := range terms {
@@ -324,34 +273,28 @@ func RunDaemon(opts CLIOptions) error {
 							}
 							continue
 						}
-						if text == "" {
+
+						// 需要从内容搜索
+						snips, err := extract.FileFindSnippets(ctx, p, t, contextLen, maxSnips)
+						if err != nil || len(snips) == 0 {
 							allMatch = false
 							break
 						}
-						textSnips := extract.FindSnippets(text, t, contextLen, maxSnips)
-						if len(textSnips) == 0 {
-							allMatch = false
-							break
-						}
-						for _, s := range textSnips {
+						// 只要命中，就加入 snippets（如果不超过配额）
+						for _, s := range snips {
 							if len(snipsOut) >= maxTotal {
 								break
 							}
 							snipsOut = append(snipsOut, s)
 						}
 					}
+
 					if !allMatch || len(snipsOut) == 0 {
 						if debugEnabled {
 							elapsed := time.Since(startAt)
-							// 只记录慢的未命中：通常意味着提取/解压很慢或文件很大。
 							if elapsed >= 1200*time.Millisecond {
-								if st, serr := os.Stat(p); serr == nil {
-									log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Size=%d | Ext=%s | Path=%s | Match=0",
-										os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), st.Size(), strings.ToLower(filepath.Ext(p)), p)
-								} else {
-									log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Path=%s | Match=0",
-										os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), p)
-								}
+								log.Printf("[SLOW-MISS] PID=%d | QID=%d | Elapsed=%s | Ext=%s | Path=%s",
+									os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), ext, p)
 							}
 						}
 						continue
@@ -370,7 +313,7 @@ func RunDaemon(opts CLIOptions) error {
 						QueryID:   cmd.QueryID,
 						Path:      p,
 						Snippets:  snipsOut,
-						Extension: strings.ToLower(filepath.Ext(p)),
+						Extension: ext,
 						Size:      size,
 						ModTime:   modTime,
 					})
@@ -378,8 +321,8 @@ func RunDaemon(opts CLIOptions) error {
 					if debugEnabled {
 						elapsed := time.Since(startAt)
 						if elapsed >= 800*time.Millisecond {
-							log.Printf("[SLOW] PID=%d | QueryID=%d | Elapsed=%s | Size=%d | Ext=%s | Path=%s | Snips=%d",
-								os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), size, strings.ToLower(filepath.Ext(p)), p, len(snipsOut))
+							log.Printf("[SLOW-HIT] PID=%d | QID=%d | Elapsed=%s | Size=%d | Path=%s",
+								os.Getpid(), cmd.QueryID, elapsed.Truncate(10*time.Millisecond), size, p)
 						}
 					}
 				}
@@ -457,4 +400,19 @@ func bytesTrimSpace(b []byte) []byte {
 		j--
 	}
 	return b[i:j]
+}
+
+func maxAllocBytes() uint64 {
+	if v := strings.TrimSpace(os.Getenv("OFIND_MAX_ALLOC_MB")); v != "" {
+		if n, err := strconv.ParseUint(v, 10, 64); err == nil {
+			if n > 0 {
+				return n * 1024 * 1024
+			}
+			return 0
+		}
+	}
+	if runtime.GOARCH == "386" {
+		return 1200 * 1024 * 1024
+	}
+	return 4096 * 1024 * 1024
 }

@@ -86,12 +86,108 @@ func streamFindFirst(ctx context.Context, next nextStringChunkFunc, query string
 	}
 }
 
+// streamFindSnippets scans text chunks incrementally and returns up to maxSnippets.
+func streamFindSnippets(ctx context.Context, next nextStringChunkFunc, query string, contextLen int, maxSnippets int) ([]string, error) {
+	if stringsTrimSpace(query) == "" {
+		return nil, errors.New("query 为空")
+	}
+	if maxSnippets <= 0 {
+		maxSnippets = 1
+	}
+	if contextLen < 0 {
+		contextLen = 0
+	}
+
+	keepRunes := contextLen + utf8.RuneCountInString(query) + 8
+	var prevTail string
+	snips := make([]string, 0, maxSnippets)
+
+	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		chunk, err := next(ctx)
+		if err != nil && !errors.Is(err, io.EOF) {
+			return nil, err
+		}
+		if chunk == "" && err == nil {
+			continue
+		}
+		if chunk == "" && errors.Is(err, io.EOF) {
+			break
+		}
+
+		searchText := prevTail + chunk
+		searchFrom := 0
+
+		for len(snips) < maxSnippets {
+			idx := strings.Index(searchText[searchFrom:], query)
+			if idx < 0 {
+				break
+			}
+			realIdx := searchFrom + idx
+			matchStart := realIdx
+			matchEnd := matchStart + len(query)
+
+			fullText := searchText
+			eof := false
+			for !hasEnoughRightContext(fullText, matchEnd, contextLen) {
+				if ctx.Err() != nil {
+					return nil, ctx.Err()
+				}
+				more, ferr := next(ctx)
+				if ferr != nil {
+					if errors.Is(ferr, io.EOF) {
+						eof = true
+						break
+					}
+					return nil, ferr
+				}
+				if more == "" {
+					continue
+				}
+				fullText += more
+			}
+			searchText = fullText
+
+			start := moveLeftRunes(searchText, matchStart, contextLen)
+			end := moveRightRunes(searchText, matchEnd, contextLen)
+
+			var sb strings.Builder
+			sb.Grow((end - start) + 4)
+			sb.WriteString(searchText[start:matchStart])
+			sb.WriteString("【")
+			sb.WriteString(searchText[matchStart:matchEnd])
+			sb.WriteString("】")
+			sb.WriteString(searchText[matchEnd:end])
+			snips = append(snips, sb.String())
+
+			if matchEnd <= searchFrom {
+				searchFrom++
+			} else {
+				searchFrom = matchEnd
+			}
+
+			if eof {
+				return snips, nil
+			}
+		}
+
+		if len(snips) >= maxSnippets {
+			return snips, nil
+		}
+
+		prevTail = tailRunes(searchText, keepRunes)
+	}
+	return snips, nil
+}
+
 func tailRunes(s string, n int) string {
 	if n <= 0 || s == "" {
 		return ""
 	}
 	if utf8.RuneCountInString(s) <= n {
-		return s
+		return string([]byte(s))
 	}
 	i := len(s)
 	for k := 0; k < n && i > 0; k++ {
@@ -102,7 +198,7 @@ func tailRunes(s string, n int) string {
 		}
 		i -= size
 	}
-	return s[i:]
+	return string([]byte(s[i:]))
 }
 
 func hasEnoughRightContext(s string, fromByte int, contextLen int) bool {

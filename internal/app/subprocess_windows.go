@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -134,11 +135,12 @@ func startDaemonProcess(exePath string, root string, workers int, enablePureGoPD
 		args = append(args, "-workers", strconv.Itoa(workers))
 	}
 	cmd := exec.Command(exePath, args...)
+	cmd.Env = ensureMemoryEnv(os.Environ())
 	if enablePureGoPDF {
-		cmd.Env = append(os.Environ(), "OFIND_PDF_PUREGO=1")
+		cmd.Env = append(cmd.Env, "OFIND_PDF_PUREGO=1")
 	} else {
 		// 显式关闭：避免父进程环境变量污染导致意外开启。
-		cmd.Env = append(os.Environ(), "OFIND_PDF_PUREGO=0")
+		cmd.Env = append(cmd.Env, "OFIND_PDF_PUREGO=0")
 	}
 	debugConsole := os.Getenv("OFIND_DEBUG_CONSOLE") == "1"
 	hide := !debugConsole
@@ -192,4 +194,29 @@ func startDaemonProcess(exePath string, root string, workers int, enablePureGoPD
 	}()
 
 	return p, nil
+}
+
+func ensureMemoryEnv(env []string) []string {
+	limitMB := defaultMemLimitMB()
+	limitStr := strconv.FormatInt(limitMB, 10)
+	env = ensureEnv(env, "OFIND_MEM_LIMIT_MB", limitStr)
+	env = ensureEnv(env, "GOMEMLIMIT", limitStr+"MiB")
+	return env
+}
+
+func defaultMemLimitMB() int64 {
+	if runtime.GOARCH == "386" {
+		return 1400
+	}
+	return 4096
+}
+
+func ensureEnv(env []string, key string, value string) []string {
+	prefix := key + "="
+	for _, v := range env {
+		if strings.HasPrefix(v, prefix) {
+			return env
+		}
+	}
+	return append(env, prefix+value)
 }

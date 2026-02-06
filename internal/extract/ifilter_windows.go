@@ -138,6 +138,72 @@ func ifilterFindFirst(ctx context.Context, path string, query string, contextLen
 	}
 }
 
+func ifilterFindSnippets(ctx context.Context, path string, query string, contextLen int, maxSnippets int) ([]string, error) {
+	q := strings.TrimSpace(query)
+	if q == "" {
+		return nil, errors.New("query 为空")
+	}
+	if maxSnippets <= 0 {
+		maxSnippets = 1
+	}
+
+	// COM init per goroutine/thread: best-effort.
+	if err := coInitialize(); err != nil {
+		return nil, err
+	}
+	defer coUninitialize()
+
+	flt, err := loadIFilter(path)
+	if err != nil {
+		return nil, err
+	}
+	defer flt.release()
+
+	if err := flt.init(); err != nil {
+		return nil, err
+	}
+
+	snips := make([]string, 0, maxSnippets)
+	for {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		var chunk statChunk
+		hr := flt.getChunk(&chunk)
+		if hr == FILTER_E_END_OF_CHUNKS {
+			return snips, nil
+		}
+		if failed(hr) {
+			return snips, nil
+		}
+		if chunk.flags&CHUNK_TEXT == 0 {
+			continue
+		}
+		for {
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			text, hr2 := flt.getText()
+			if hr2 == FILTER_E_NO_MORE_TEXT {
+				break
+			}
+			if failed(hr2) {
+				break
+			}
+			if text == "" {
+				continue
+			}
+			found := FindSnippets(text, q, contextLen, maxSnippets-len(snips))
+			if len(found) > 0 {
+				snips = append(snips, found...)
+				if len(snips) >= maxSnippets {
+					return snips, nil
+				}
+			}
+		}
+	}
+}
+
 func coInitialize() error {
 	hr, _, _ := procCoInitializeEx.Call(0, COINIT_APARTMENTTHREADED)
 	if failed(uint32(hr)) {

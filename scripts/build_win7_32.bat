@@ -43,7 +43,7 @@ if errorlevel 1 goto :err
 
 echo Build Complete.
 if /i "%~1"=="--nopause" goto :eof
-pause
+@REM pause
 goto :eof
 
 :err

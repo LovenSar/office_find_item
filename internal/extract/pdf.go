@@ -29,9 +29,10 @@ func pdfPageWorkers() int {
 }
 
 func pdfMaxFileBytes() int64 {
-	// 纯 Go PDF 解析在大文件上可能产生巨量内存/CPU；这里给出保守默认值。
+	// 纯 Go PDF 解析在大文件上可能产生巨量内存/CPU；这里给出更保守默认值。
 	// Windows 下优先使用 IFilter（若可用），仅在 fallback 时才应用该限制。
-	const def = 50 * 1024 * 1024
+	// 若需要放宽，可通过环境变量显式设置。
+	const def = 20 * 1024 * 1024
 	v := strings.TrimSpace(os.Getenv("OFIND_PDF_MAX_FILE_BYTES"))
 	if v == "" {
 		return def
@@ -140,6 +141,82 @@ func pdfFindFirst(ctx context.Context, path string, query string, contextLen int
 		return p.GetPlainText(fonts)
 	}
 	return streamFindFirst(ctx, next, q, contextLen)
+}
+
+// pdfFindSnippetsStream collects up to maxSnippets snippets without extracting the full text.
+func pdfFindSnippetsStream(ctx context.Context, path string, query string, contextLen int, maxSnippets int) ([]string, error) {
+	q := stringsTrimSpace(query)
+	if q == "" {
+		return nil, errors.New("query 为空")
+	}
+	if maxSnippets <= 0 {
+		maxSnippets = 1
+	}
+
+	// Windows 优先 IFilter：更节省内存，且流式返回 chunk。
+	if runtime.GOOS == "windows" {
+		snips, err := ifilterFindSnippets(ctx, path, q, contextLen, maxSnippets)
+		if err == nil {
+			return snips, nil
+		}
+		if !pdfPureGoFallbackEnabled() {
+			return nil, err
+		}
+	}
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	if st, err := os.Stat(path); err == nil {
+		if st.Size() > pdfMaxFileBytes() {
+			return nil, errTooLarge
+		}
+	}
+
+	f, r, err := pdfOpen(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	pages := r.NumPage()
+	fonts := make(map[string]*pdf.Font)
+	snips := make([]string, 0, maxSnippets)
+	for i := 1; i <= pages; i++ {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		p := r.Page(i)
+		for _, name := range p.Fonts() {
+			if _, ok := fonts[name]; ok {
+				continue
+			}
+			fnt := p.Font(name)
+			fonts[name] = &fnt
+		}
+		text, err := p.GetPlainText(fonts)
+		if err != nil || text == "" {
+			continue
+		}
+		found := FindSnippets(text, q, contextLen, maxSnippets-len(snips))
+		if len(found) > 0 {
+			snips = append(snips, found...)
+			if len(snips) >= maxSnippets {
+				return snips, nil
+			}
+		}
+	}
+	return snips, nil
+}
+
+// PDFFindSnippetsStream is an exported wrapper for streaming PDF snippet search.
+func PDFFindSnippetsStream(ctx context.Context, path string, query string, contextLen int, maxSnippets int) ([]string, error) {
+	return pdfFindSnippetsStream(ctx, path, query, contextLen, maxSnippets)
 }
 
 func pdfExtractText(ctx context.Context, path string, maxBytes int64) (string, error) {
