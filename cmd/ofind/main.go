@@ -39,6 +39,11 @@ func main() {
 		logPath := filepath.Join(exeDir, "ofind_debug.log")
 		base := strings.ToLower(filepath.Base(exe))
 		debugMode := strings.Contains(base, "debug") || os.Getenv("OFIND_DEBUG") == "1"
+		pdfMemHookEnv := strings.TrimSpace(os.Getenv("OFIND_PDF_MEM_HOOK"))
+		pdfMemHookOn := pdfMemHookEnv != "" &&
+			!strings.EqualFold(pdfMemHookEnv, "0") &&
+			!strings.EqualFold(pdfMemHookEnv, "false") &&
+			!strings.EqualFold(pdfMemHookEnv, "off")
 
 		f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
@@ -87,6 +92,9 @@ func main() {
 							readRate, writeRate)
 					}
 				}()
+			} else if pdfMemHookOn {
+				// release 下默认 Discard；若开启 PDF 内存 hook，至少写入 exe 同目录 ofind_debug.log
+				log.SetOutput(f)
 			} else {
 				// release：不输出日志，也不弹窗
 				log.SetOutput(io.Discard)
@@ -143,14 +151,6 @@ func main() {
 			winutil.DetachConsole()
 		}
 
-		// 临时设置环境变量，避免UI启动时检测PDF IFilter（可能导致COM初始化问题）
-		originalPureGo := os.Getenv("OFIND_PDF_PUREGO")
-		if originalPureGo == "" {
-			// 如果用户没有设置，我们临时设置为"1"（启用纯Go PDF引擎）
-			// 这样可以避免HasPDFIFilter()在UI启动时被调用
-			os.Setenv("OFIND_PDF_PUREGO", "1")
-		}
-
 		log.Println("Starting UI mode...")
 		if err := app.RunUI(); err != nil {
 			log.Printf("UI Error: %v", err)
@@ -158,13 +158,6 @@ func main() {
 				fmt.Fprintln(os.Stderr, err)
 			}
 			os.Exit(1)
-		}
-
-		// 恢复原始环境变量（虽然程序即将退出）
-		if originalPureGo == "" {
-			os.Unsetenv("OFIND_PDF_PUREGO")
-		} else {
-			os.Setenv("OFIND_PDF_PUREGO", originalPureGo)
 		}
 		return
 	}
@@ -186,7 +179,7 @@ func main() {
 
 	var (
 		ui      = flag.Bool("ui", false, "启动Windows UI")
-		roots   = flag.String("roots", "", "要搜索的根目录，多个用 ; 分隔")
+		roots   = flag.String("roots", "", "要搜索的根目录，多个用 ; 分隔；省略时默认 C:\\、D:\\、E:\\ 中已存在的盘")
 		query   = flag.String("q", "", "Query 1：要查找的字符串（Unicode）")
 		query2  = flag.String("q2", "", "Query 2：要查找的字符串（交集）")
 		query3  = flag.String("q3", "", "Query 3：要查找的字符串（交集）")

@@ -12,9 +12,11 @@ Win7 32-bit 可用的“文件内容查找”工具（Go 单 exe）。支持 GUI
 ## PDF 重要说明（避免压测内存暴涨）
 
 - **默认策略（推荐）**：Windows 下 PDF 依赖系统 IFilter（更省内存，稳定）。
-- **内置 PDF 检索引擎（高风险）**：当系统没有可用 PDF IFilter 时，工具会自动启用“纯 Go fallback”解析 PDF（无需手动配置），但在部分 PDF 上可能导致 **内存/CPU 暴涨**。如果系统安装了 PDF IFilter，工具会自动优先使用更稳定的 IFilter。
-  - GUI：状态栏显示 PDF IFilter 检测结果，可手动勾选“启用内置 PDF 检索引擎（可能导致内存暴涨）”强制使用纯 Go 引擎
-  - CLI：环境变量 `OFIND_PDF_PUREGO` 可强制控制行为：`=1` 启用纯 Go 引擎，`=0` 禁用纯 Go 引擎（仅使用 IFilter）。未设置时自动检测。
+- **未勾选内置 PDF 时（推荐省内存）**：Windows 下顺序为 **系统 IFilter** → **Poppler `pdftotext` 子进程**。发布用 `ofind.exe` 已将 `pdftotext.exe` **嵌入**在 exe 内，首次使用会解压到用户缓存目录（如 `%LocalAppData%\office_find_item\bundled_pdftotext\`）；亦可继续支持同目录 `pdftotext.exe`、`PATH` 或 `OFIND_PDFTOTEXT_PATH`。**构建前**请将官方 Poppler 包中的 `pdftotext.exe`（及运行所需的 `.dll`）放入源码目录 `internal/extract/bundled_pdftotext/` 一并嵌入。若运行时缺少 DLL，将对应文件加入该目录后重新编译即可。
+- **内置 PDF 检索引擎（纯 Go，高风险）**：勾选后，在 IFilter 失败时使用 **纯 Go** 解析 PDF，在部分 PDF 上可能导致 **内存/CPU 暴涨**。
+  - GUI：可勾选“启用内置 PDF 检索引擎…”使用纯 Go；**不勾选**时优先 IFilter + `pdftotext`
+  - CLI：`OFIND_PDF_PUREGO=1` 启用纯 Go；`=0` 禁用纯 Go（使用 IFilter + `pdftotext`）。未设置时在 Windows 上自动检测 IFilter 并决定是否默认允许纯 Go（与旧版逻辑一致）。
+  - 可选：`OFIND_PDFTOTEXT=0` 禁用 `pdftotext` 回退；`OFIND_PDFTOTEXT_MAX_OUT_BYTES` 限制子进程输出最大字节数（默认约 40MiB）
   - 可选：`OFIND_PDF_MAX_FILE_BYTES` 控制纯 Go fallback 允许解析的 PDF 最大文件大小（默认 20MiB）
   - 可选：`OFIND_PDF_MAX_PAGES` 控制纯 Go fallback 允许解析的最大页数（默认 100 页），避免处理超大 PDF 时内存暴涨
   - 可选：`OFIND_PDF_PAGE_WORKERS` 控制 PDF 页面并行解析 worker 数（默认 1，关闭并行以避免内存暴涨）
@@ -29,7 +31,7 @@ Win7 32-bit 可用的“文件内容查找”工具（Go 单 exe）。支持 GUI
 .\ofind.exe -ui
 ```
 
-- Roots：可选择目录，也可“全盘”（多盘用 `;` 分隔）
+- Roots：可选择目录，多盘用 `;` 分隔。**未填写时默认从 `C:\`、`D:\`、`E:\` 中已存在的盘开始**（GUI 启动时也会自动填入）；「全盘」按钮仍为当前机器全部可搜索盘符。
 - Query / Query2 / Query3：交集匹配（都命中才算命中）
 - 停止输入约 400ms 后会自动开始搜索；双击结果会在资源管理器中定位文件；可导出 CSV 列表
 - 状态栏会显示 `PDF IFilter` 检测结果，便于判断是否需要勾选“内置 PDF 检索引擎”

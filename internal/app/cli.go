@@ -31,8 +31,7 @@ func RunCLI(opts CLIOptions) error {
 
 	roots := parseRoots(opts.Roots)
 	if len(roots) == 0 {
-		// 对齐 GUI：默认全盘
-		roots = winutil.ListSearchableDrives()
+		roots = winutil.DefaultSearchRoots()
 	}
 
 	for i := range roots {

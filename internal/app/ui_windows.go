@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -14,7 +15,7 @@ import (
 
 	"github.com/lxn/walk"
 	"github.com/lxn/walk/declarative"
-	_ "office_find_item/internal/extract"
+	"office_find_item/internal/extract"
 	"office_find_item/internal/winutil"
 )
 
@@ -48,12 +49,17 @@ func RunUI() error {
 		resultCh = make(chan daemonOut, 2000)
 	)
 
-	pdfIFilterOK := false // 临时禁用 IFilter 检测以修复 UI 启动问题
+	// PDF IFilter：在独立 OS 线程上跑 HasPDFIFilter（COM STA），避免在 walk UI 线程上 CoInit 与 LoadIFilter 冲突。
+	var pdfIFilterOK bool
+	var pdfIFilterPending int32 = 1
 
 	statusSuffix := func() string {
 		pdfEngine := "OFF"
 		if pdfPureGoCB != nil && pdfPureGoCB.Checked() {
 			pdfEngine = "ON"
+		}
+		if atomic.LoadInt32(&pdfIFilterPending) != 0 {
+			return fmt.Sprintf("PDF IFilter: 检测中… | 内置PDF: %s", pdfEngine)
 		}
 		if pdfIFilterOK {
 			return fmt.Sprintf("PDF IFilter: 有 | 内置PDF: %s", pdfEngine)
@@ -122,7 +128,7 @@ func RunUI() error {
 
 		daemonMu.Lock()
 		for _, d := range daemons {
-			_ = d.SetQuery("", "", "", myGen, 30, 3)
+			_ = d.SetQuery("", "", "", myGen, 30, 1)
 		}
 		daemonMu.Unlock()
 		clearSelection()
@@ -227,7 +233,7 @@ func RunUI() error {
 		}
 		// send query to all
 		for _, d := range daemons {
-			_ = d.SetQuery(q1, q2, q3, myGen, 30, 3)
+			_ = d.SetQuery(q1, q2, q3, myGen, 30, 1)
 		}
 		daemonMu.Unlock()
 	}
@@ -306,7 +312,7 @@ func RunUI() error {
 							stopSearch()
 						},
 					},
-					declarative.Label{Text: "建议安装 Office / PDF 阅读器 / WPS（提供 PDF IFilter），更省内存更稳定。", ColumnSpan: 6},
+					declarative.Label{Text: "未勾选内置 PDF 时：优先 IFilter，失败则用 Poppler 的 pdftotext.exe（可放 exe 同目录）。勾选内置则为纯 Go 解析。", ColumnSpan: 6},
 					declarative.PushButton{AssignTo: &btnStop, Text: "停止", Enabled: false, OnClicked: stopSearch, ColumnSpan: 5},
 					declarative.PushButton{
 						Text: "导出列表",
@@ -371,6 +377,25 @@ func RunUI() error {
 		return err
 	}
 	setStatus("Ready（输入后自动搜索）")
+
+	go func() {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+		ok := func() (result bool) {
+			defer func() {
+				if recover() != nil {
+					result = false
+				}
+			}()
+			result = extract.HasPDFIFilter()
+			return
+		}()
+		mw.Synchronize(func() {
+			pdfIFilterOK = ok
+			atomic.StoreInt32(&pdfIFilterPending, 0)
+			setStatus("")
+		})
+	}()
 
 	// UI 结果聚合协程：
 	// - 合并刷新，避免每条结果都 Synchronize 导致 UI 卡顿
@@ -502,7 +527,7 @@ func RunUI() error {
 
 	// 默认全盘（无弹窗）。
 	if strings.TrimSpace(rootsEdit.Text()) == "" {
-		rootsEdit.SetText(strings.Join(winutil.ListSearchableDrives(), ";"))
+		rootsEdit.SetText(strings.Join(winutil.DefaultSearchRoots(), ";"))
 	}
 
 	// 输入变化：立即清空旧结果，并取消旧查询；停止输入 400ms 后再开始新查询。
@@ -523,7 +548,7 @@ func RunUI() error {
 
 		daemonMu.Lock()
 		for _, d := range daemons {
-			_ = d.SetQuery("", "", "", myGen, 30, 3)
+			_ = d.SetQuery("", "", "", myGen, 30, 1)
 		}
 		daemonMu.Unlock()
 

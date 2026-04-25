@@ -23,6 +23,25 @@ const (
 	driveRAMDisk   = 6
 )
 
+// DefaultSearchRoots 返回程序默认搜索根：按顺序 C:\、D:\、E:\（仅含存在且可搜索的本地盘）。
+// 若三者均不可用，则回退为 ListSearchableDrives()。
+func DefaultSearchRoots() []string {
+	letters := []byte{'C', 'D', 'E'}
+	out := make([]string, 0, 3)
+	for _, letter := range letters {
+		root := []uint16{uint16(letter), ':', '\\', 0}
+		t := getDriveType(&root[0])
+		switch t {
+		case driveFixed, driveRemovable:
+			out = append(out, string([]byte{letter, ':', '\\'}))
+		}
+	}
+	if len(out) > 0 {
+		return out
+	}
+	return ListSearchableDrives()
+}
+
 // ListSearchableDrives 返回可搜索的盘符根路径（如 C:\）。
 // 默认包含 Fixed/Removable；排除 CD-ROM/网络盘（可按需扩展）。
 func ListSearchableDrives() []string {

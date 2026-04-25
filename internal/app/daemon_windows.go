@@ -222,17 +222,17 @@ func RunDaemon(opts CLIOptions) error {
 			}
 		}
 		contextLen := cmd.ContextLen
+		// 每个关键词在文件内只取「首次命中 + 上下文」（早停）；不再扫后续命中。
 		maxSnips := cmd.MaxSnippets
 		if maxSnips <= 0 {
-			maxSnips = 3
+			maxSnips = 1
 		}
-		// 多关键词时，整体最多展示 maxSnips*len(terms)，并做上限保护。
-		maxTotal := maxSnips
-		if len(terms) > 1 {
-			maxTotal = maxSnips * len(terms)
-			if maxTotal > 12 {
-				maxTotal = 12
-			}
+		if maxSnips > 1 {
+			maxSnips = 1
+		}
+		maxTotal := len(terms)
+		if maxTotal > 12 {
+			maxTotal = 12
 		}
 
 		jobs := make(chan string, workers*4)
@@ -264,7 +264,7 @@ func RunDaemon(opts CLIOptions) error {
 						}
 					}
 
-					// 统一流式处理（不再预提取全文）
+					// 流式处理：每个词只取首次命中 + 上下文（FileFindFirst），命中即停该词扫描。
 					allMatch := true
 					snipsOut := make([]string, 0, maxTotal)
 					for i, t := range terms {
@@ -279,25 +279,20 @@ func RunDaemon(opts CLIOptions) error {
 							continue
 						}
 
-						// 需要从内容搜索
-						snips, err := extract.FileFindSnippets(ctx, p, t, contextLen, maxSnips)
+						found, snip, err := extract.FileFindFirst(ctx, p, t, contextLen)
 						if err != nil {
 							if debugEnabled {
-								log.Printf("[ERROR] FileFindSnippets failed for %s: %v", p, err)
+								log.Printf("[ERROR] FileFindFirst failed for %s: %v", p, err)
 							}
 							allMatch = false
 							break
 						}
-						if len(snips) == 0 {
+						if !found {
 							allMatch = false
 							break
 						}
-						// 只要命中，就加入 snippets（如果不超过配额）
-						for _, s := range snips {
-							if len(snipsOut) >= maxTotal {
-								break
-							}
-							snipsOut = append(snipsOut, s)
+						if snip != "" && len(snipsOut) < maxTotal {
+							snipsOut = append(snipsOut, snip)
 						}
 					}
 

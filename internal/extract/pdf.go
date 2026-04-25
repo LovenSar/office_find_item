@@ -189,12 +189,14 @@ func pdfOpenWithLimit(ctx context.Context, path string) (*os.File, *pdf.Reader, 
 	if err := acquirePDFSlot(ctx); err != nil {
 		return nil, nil, err
 	}
+	pdfMemHook("pdf:slot:acquired", path)
 
 	f, r, err := pdfOpen(path)
 	if err != nil {
 		releasePDFSlot()
 		return nil, nil, err
 	}
+	pdfMemHook("pdf:purego:NewReader_ok", path)
 
 	// 返回原始文件，但调用者需要在defer中调用releasePDFSlotOnClose
 	// 注意：调用者必须确保在文件关闭后调用releasePDFSlot()
@@ -265,13 +267,16 @@ func pdfFindFirst(ctx context.Context, path string, query string, contextLen int
 
 	// Windows 优先 IFilter（更节省内存，且支持真正的流式 chunk）。
 	if runtime.GOOS == "windows" {
+		pdfMemHook("pdf:IFilter:try", path)
 		found, snip, err := ifilterFindFirst(ctx, path, q, contextLen)
 		if err == nil {
+			pdfMemHook("pdf:IFilter:ok", path)
 			return found, snip, nil
 		}
-		// 默认不做纯 Go fallback（见 README：PDF 依赖系统 IFilter）。
+		// 未勾选内置 PDF：IFilter 失败后优先 Poppler pdftotext 子进程。
 		if !pdfPureGoFallbackEnabled() {
-			return false, "", err
+			pdfMemHook("pdf:pdftotext:findFirst", path)
+			return pdftotextFindFirst(ctx, path, q, contextLen)
 		}
 	}
 
@@ -287,12 +292,14 @@ func pdfFindFirst(ctx context.Context, path string, query string, contextLen int
 		}
 	}
 
+	pdfMemHook("pdf:purego:findFirst_begin", path)
 	f, r, err := pdfOpenWithLimit(ctx, path)
 	if err != nil {
 		return false, "", err
 	}
-	defer f.Close()
+	defer func() { pdfMemHook("pdf:purego:findFirst_exit", path) }()
 	defer releasePDFSlotOnClose()()
+	defer f.Close()
 
 	if ctx.Err() != nil {
 		return false, "", ctx.Err()
@@ -302,6 +309,7 @@ func pdfFindFirst(ctx context.Context, path string, query string, contextLen int
 		return false, "", err
 	}
 	pages := r.NumPage()
+	pdfMemHook("pdf:purego:findFirst_pages="+strconv.Itoa(pages), path)
 	fonts := make(map[string]*pdf.Font)
 	nextPage := 1
 	next := func(ctx context.Context) (string, error) {
@@ -312,6 +320,7 @@ func pdfFindFirst(ctx context.Context, path string, query string, contextLen int
 			return "", ctx.Err()
 		}
 		p := r.Page(nextPage)
+		curPage := nextPage
 		nextPage++
 		for _, name := range p.Fonts() {
 			if _, ok := fonts[name]; ok {
@@ -320,7 +329,11 @@ func pdfFindFirst(ctx context.Context, path string, query string, contextLen int
 			f := p.Font(name)
 			fonts[name] = &f
 		}
-		return p.GetPlainText(fonts)
+		text, err := p.GetPlainText(fonts)
+		if err == nil {
+			pdfMemHookPage(path, curPage, len(text))
+		}
+		return text, err
 	}
 	return streamFindFirst(ctx, next, q, contextLen)
 }
@@ -337,12 +350,15 @@ func pdfFindSnippetsStream(ctx context.Context, path string, query string, conte
 
 	// Windows 优先 IFilter：更节省内存，且流式返回 chunk。
 	if runtime.GOOS == "windows" {
+		pdfMemHook("pdf:IFilter:try_snippets", path)
 		snips, err := ifilterFindSnippets(ctx, path, q, contextLen, maxSnippets)
 		if err == nil {
+			pdfMemHook("pdf:IFilter:ok_snippets", path)
 			return snips, nil
 		}
 		if !pdfPureGoFallbackEnabled() {
-			return nil, err
+			pdfMemHook("pdf:pdftotext:snippets", path)
+			return pdftotextFindSnippets(ctx, path, q, contextLen, maxSnippets)
 		}
 	}
 
@@ -356,12 +372,14 @@ func pdfFindSnippetsStream(ctx context.Context, path string, query string, conte
 		}
 	}
 
+	pdfMemHook("pdf:purego:snippets_begin", path)
 	f, r, err := pdfOpenWithLimit(ctx, path)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { pdfMemHook("pdf:purego:snippets_exit", path) }()
 	defer releasePDFSlotOnClose()()
+	defer f.Close()
 
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -371,6 +389,7 @@ func pdfFindSnippetsStream(ctx context.Context, path string, query string, conte
 		return nil, err
 	}
 	pages := r.NumPage()
+	pdfMemHook("pdf:purego:snippets_pages="+strconv.Itoa(pages), path)
 	fonts := make(map[string]*pdf.Font)
 	nextPage := 1
 	next := func(ctx context.Context) (string, error) {
@@ -381,6 +400,7 @@ func pdfFindSnippetsStream(ctx context.Context, path string, query string, conte
 			return "", ctx.Err()
 		}
 		p := r.Page(nextPage)
+		curPage := nextPage
 		nextPage++
 		for _, name := range p.Fonts() {
 			if _, ok := fonts[name]; ok {
@@ -389,7 +409,11 @@ func pdfFindSnippetsStream(ctx context.Context, path string, query string, conte
 			f := p.Font(name)
 			fonts[name] = &f
 		}
-		return p.GetPlainText(fonts)
+		text, err := p.GetPlainText(fonts)
+		if err == nil {
+			pdfMemHookPage(path, curPage, len(text))
+		}
+		return text, err
 	}
 	return streamFindSnippets(ctx, next, q, contextLen, maxSnippets)
 }
@@ -407,12 +431,14 @@ func pdfExtractText(ctx context.Context, path string, maxBytes int64) (string, e
 
 	// Windows 优先 IFilter：避免纯 Go PDF 解析导致的内存暴涨。
 	if runtime.GOOS == "windows" {
+		pdfMemHook("pdf:IFilter:try_extract", path)
 		if text, err := ifilterExtractText(ctx, path, maxBytes); err == nil {
+			pdfMemHook("pdf:IFilter:ok_extract", path)
 			return text, nil
 		}
-		// 默认不做纯 Go fallback（见 README：PDF 依赖系统 IFilter）。
 		if !pdfPureGoFallbackEnabled() {
-			return "", errors.New("PDF 提取需要系统 IFilter（请安装对应组件或设置 OFIND_PDF_PUREGO=1 开启纯 Go fallback）")
+			pdfMemHook("pdf:pdftotext:extract", path)
+			return pdftotextExtractText(ctx, path, maxBytes)
 		}
 	}
 
@@ -423,12 +449,14 @@ func pdfExtractText(ctx context.Context, path string, maxBytes int64) (string, e
 		}
 	}
 
+	pdfMemHook("pdf:purego:extract_begin", path)
 	f, r, err := pdfOpenWithLimit(ctx, path)
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func() { pdfMemHook("pdf:purego:extract_exit", path) }()
 	defer releasePDFSlotOnClose()()
+	defer f.Close()
 
 	if ctx.Err() != nil {
 		return "", ctx.Err()
@@ -436,12 +464,13 @@ func pdfExtractText(ctx context.Context, path string, maxBytes int64) (string, e
 
 	workers := pdfPageWorkers()
 	if workers <= 1 {
-		return pdfExtractTextSequential(ctx, r, maxBytes)
+		return pdfExtractTextSequential(ctx, path, r, maxBytes)
 	}
-	return pdfExtractTextParallel(ctx, r, maxBytes, workers)
+	pdfMemHook("pdf:purego:extract_parallel_workers="+strconv.Itoa(workers), path)
+	return pdfExtractTextParallel(ctx, path, r, maxBytes, workers)
 }
 
-func pdfExtractTextSequential(ctx context.Context, r *pdf.Reader, maxBytes int64) (string, error) {
+func pdfExtractTextSequential(ctx context.Context, path string, r *pdf.Reader, maxBytes int64) (string, error) {
 	var sb strings.Builder
 	var approx int64
 
@@ -449,6 +478,7 @@ func pdfExtractTextSequential(ctx context.Context, r *pdf.Reader, maxBytes int64
 		return "", err
 	}
 	pages := r.NumPage()
+	pdfMemHook("pdf:purego:extract_seq_pages="+strconv.Itoa(pages), path)
 	fonts := make(map[string]*pdf.Font)
 	for i := 1; i <= pages; i++ {
 		if ctx.Err() != nil {
@@ -471,6 +501,7 @@ func pdfExtractTextSequential(ctx context.Context, r *pdf.Reader, maxBytes int64
 		if err != nil {
 			return "", err
 		}
+		pdfMemHookPage(path, i, len(text))
 		if text == "" {
 			continue
 		}
@@ -486,7 +517,7 @@ func pdfExtractTextSequential(ctx context.Context, r *pdf.Reader, maxBytes int64
 	return sb.String(), nil
 }
 
-func pdfExtractTextParallel(ctx context.Context, r *pdf.Reader, maxBytes int64, workers int) (string, error) {
+func pdfExtractTextParallel(ctx context.Context, path string, r *pdf.Reader, maxBytes int64, workers int) (string, error) {
 	type pageResult struct {
 		page int
 		text string
@@ -498,7 +529,7 @@ func pdfExtractTextParallel(ctx context.Context, r *pdf.Reader, maxBytes int64, 
 	}
 	pages := r.NumPage()
 	if pages <= 1 {
-		return pdfExtractTextSequential(ctx, r, maxBytes)
+		return pdfExtractTextSequential(ctx, path, r, maxBytes)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -539,6 +570,9 @@ func pdfExtractTextParallel(ctx context.Context, r *pdf.Reader, maxBytes int64, 
 					fonts[name] = &f
 				}
 				text, err := p.GetPlainText(fonts)
+				if err == nil {
+					pdfMemHookPage(path, pageNum, len(text))
+				}
 				select {
 				case results <- pageResult{page: pageNum, text: text, err: err}:
 				case <-ctx.Done():
